@@ -1,0 +1,55 @@
+---
+title: "CFA: Psychological distress during COVID-19 in Canadian youth with chronic health conditions and health peers"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load the libraries
+library(tidyverse)
+library(readr)
+library(here)
+library(psych)
+library(english)
+library(stringr)
+library(tableone)
+library(kableExtra)
+library(scales)
+library(ggridges)
+library(plotly)
+library(patchwork)
+library(haven)
+library(sjPlot)
+library(sjmisc)
+library(lavaan)
+library(stats)
+```
+
+```{r data, echo=FALSE, message=FALSE, warning=FALSE}
+# Read in the clean csv file
+leger_cfa <- read_csv("data/cmaj_analyses.csv") %>%
+  filter(wave == 2) %>%
+  select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  drop_na()
+
+```
+
+#### Aims:
+Perform CFA for the distress scale
+
+## Zero-order polychoric item to item correlations
+```{r echo=FALSE, }
+poly_cors<-polychoric(leger_cfa)
+
+items_polychoric <- poly_cors$rho
+
+items_polychoric <- as.data.frame(round(items_polychoric, 2)) 
+
+items_polychoric[upper.tri(items_polychoric)] <- " "
+
+items_polychoric %>%
+  kable(escape = F) %>%
+  kable_styling("hover")
+```
+
+
