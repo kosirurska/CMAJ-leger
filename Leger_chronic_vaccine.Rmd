@@ -37,7 +37,7 @@ leger_chronic <- leger %>%
 #### Aims:
 Using Canadian representative samples, we aimed 
 
-1) Report any differences in psychological functioning (feelings of anxiety, depression, loneliness)  among young people with different medical needs, and see how it changed over the course of the pandemic;
+1) Report any differences in psychological functioning (feelings of anxiety, depression, loneliness, anger/frustration)  among young people with different medical needs, and see how it changed over the course of the pandemic;
 
 2) compare young people with any chronic health condition to their healthy peers in terms of COVID-19 impact on psychological functioning.
 
@@ -49,7 +49,6 @@ The present study is part of a larger International COVID‐19 Awareness and Res
 ### Sample
 
 ```{r echo=FALSE, warning=FALSE}
-
 table_data <- leger %>%
   select(age_yrs, sex, edu, hoinc, province_full, chronic_descriptive, chronic_dummy, chronic_multi, any_m_health, vaccine, booster_dummy) %>%
   mutate(chronic_dummy = factor(chronic_dummy,
@@ -84,6 +83,7 @@ table1(~ age_yrs + sex + edu + hoinc + province_full + chronic_descriptive + chr
 
 ```{r echo=FALSE, warning=FALSE}
 leger %>%
+  #filter(age_yrs >25) %>%
   select(chronic_dummy, wave, distress_rev) %>%
   mutate(chronic_dummy = factor(chronic_dummy,
                                 levels = c(0:1),
@@ -139,6 +139,10 @@ leger %>%
   kable() %>%
   kable_styling(full_width = FALSE)
 
+# a<-leger %>%
+#   filter(chronic_dummy==0)
+# 
+# hist(a$distress_rev)
 ```
 ## Group comparisons
 
@@ -172,6 +176,13 @@ test %>%
   theme(strip.text = element_text(face = 'bold')) + 
   labs(x = "Age group", y = "Distress level", fill = " ") +
   ylim(4, 16)
+```
+
+## ADDED DISTRESS
+
+```{r}
+# bring in the variables for alcohol, cigarettes, vapes, recreational drugs
+
 ```
 
 
