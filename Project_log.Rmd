@@ -1,0 +1,22 @@
+---
+title: "Project log"
+author: "Prepared by UK"
+date: "First opened: 2021-11-17 | Last update: `r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###  
+**March 2021**
+
+Note, this project began as soon as I joined the new lab. I started the project log recently with the updates and changes. This is to assure for transparency of the work. As a result, some of the reporting of the process is retrospective. 
+
+***
+####  Prospective reporting starts
+
+**Wednesday, November 17, 2021**
+Met KJD, TBP in order to discuss the findings (visual data exploration). 
+
