@@ -1,5 +1,5 @@
 ---
-title: "Psychological distress during COVID-19 in Canadian youth with chronic health conditions and health peers"
+title: "Psychological distress during COVID-19 in Canadian youth with and without chronic health conditions"
 output: html_document
 ---
 
@@ -84,7 +84,8 @@ table1(~ age_yrs + sex + edu + hoinc + province_full + chronic_descriptive + chr
 ```{r echo=FALSE, warning=FALSE}
 leger %>%
   #filter(age_yrs >25) %>%
-  select(chronic_dummy, wave, distress_rev) %>%
+  select(chronic_dummy, wave, distress_rev, sex) %>%
+  filter(sex %in% c("Female", "Male")) %>%
   mutate(chronic_dummy = factor(chronic_dummy,
                                 levels = c(0:1),
                                 labels = c("No", "Yes")),
@@ -93,6 +94,7 @@ leger %>%
   geom_boxplot(aes(y = distress_rev, fill=chronic_dummy)) +
   #facet_wrap(~chronic_dummy) +
   labs(title = " ", x = "Survey round", y = "Level of psychological distress", fill = "Chronic condition") +
+  #facet_grid(~sex) +
   ylim(3, 20) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
@@ -129,6 +131,7 @@ leger %>%
          chronic_dummy = factor(chronic_dummy, 
                                 levels = c(0:1),
                                 labels = c("Healthy", "Chronic health"))) %>%
+  filter(sex %in% c("Female", "Male")) %>%
   group_by(age_grp, chronic_dummy) %>%
   count() %>%
   drop_na() %>%
@@ -150,7 +153,7 @@ Psych distress is known to be a function of sex and age, with females and younge
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 test <- leger %>%
-  select(age_yrs, sex, chronic_dummy, distress_rev) %>%
+  select(age_yrs, sex, chronic_dummy, distress_rev, wave) %>%
   filter(sex %in% c("Female", "Male")) %>%
   mutate(age_grp = factor(case_when(age_yrs <26 ~ "Under 25 years",
                                     age_yrs >25 ~ "26-39 years"),
@@ -158,12 +161,8 @@ test <- leger %>%
                           ordered = TRUE),
          chronic_dummy = factor(chronic_dummy, 
                                 levels = c(0:1),
-                                labels = c("Healthy", "Chronic health")))
-## 2 WAY ANOVA  
-# test_model <- lm(distress_rev ~ age_grp + chronic_dummy + age_grp : chronic_dummy,
-#                  data = test)
-# 
-# anova(test_model)
+                                labels = c("Healthy", "Chronic health")),
+         wave = factor(wave,ordered = TRUE))
 
 test %>%
   group_by(age_grp, chronic_dummy, sex) %>%
@@ -178,71 +177,82 @@ test %>%
   ylim(4, 16)
 ```
 
-## ADDED DISTRESS
+<!-- ## ADDED DISTRESS -->
 
-```{r}
-# bring in the variables for alcohol, cigarettes, vapes, recreational drugs
+<!-- ### Associations between psych distress and socio-demographic factors -->
+
+<!-- #### Logistic regression output -->
+
+<!-- *NOTE* - Education is treated as continuous variable with the following levels: "never been" ~ 0, "primary" ~ 1,"secondary" ~ 2, "college" ~ 3, "graduate" ~ 4. -->
+
+<!-- Province is broken down into 3 geographical regions:  -->
+
+<!-- * *East* = "New Brunswick", "Nova Scotia", "Prince Edward Island", "Newfoundland" -->
+<!-- * *Central* = "Ontario", "Quebec" -->
+<!-- * *West* = "British Columbia", "Alberta", "Saskatchewan", "Manitoba" -->
+
+<!-- Distress rev = compound score of COVID-19 related feelings of anxiety, depression, and loneliness. Scale rangess from 4 - 16, with higher scores indicating higher levels of pandemic-related distress. -->
+
+<!-- *** -->
+
+<!-- ## CHRONIC GROUP -->
+
+```{r echo=FALSE, warning=FALSE}
+# set.seed(1)
+# 
+# leger_chronic_m1 <- leger_chronic %>%
+#   select(vaccine_dummy, age_yrs, sex, hoinc, edu, province, wave, any_m_health, chronic_multi, distress_rev, concern_sq002) %>%
+#   filter(sex %in% c("Male", "Female")) %>%
+#   mutate(education = as.numeric(case_when(edu == "Never been" ~ 0, 
+#                                           edu == "Primary" ~ 1,
+#                                           edu == "Secondary" ~ 2,
+#                                           edu == "College" ~ 3,
+#                                           edu == "Graduate" ~ 4)))
+# 
+# m1_chronic <- glm(distress_rev ~ age_yrs + sex + province + education + hoinc + any_m_health + chronic_multi + wave + concern_sq002,
+#                   data = leger_chronic_m1)
+# 
+# tab_model(m1_chronic)
 
 ```
 
-
-
-### Associations between psych distress and socio-demographic factors
-
-#### Logistic regression output
-
-*NOTE* - Education is treated as continuous variable with the following levels: "never been" ~ 0, "primary" ~ 1,"secondary" ~ 2, "college" ~ 3, "graduate" ~ 4.
-
-Province is broken down into 3 geographical regions: 
-
-* *East* = "New Brunswick", "Nova Scotia", "Prince Edward Island", "Newfoundland"
-* *Central* = "Ontario", "Quebec"
-* *West* = "British Columbia", "Alberta", "Saskatchewan", "Manitoba"
-
-Distress rev = compound score of COVID-19 related feelings of anxiety, depression, and loneliness. Scale rangess from 4 - 16, with higher scores indicating higher levels of pandemic-related distress.
-
-***
-
-## CHRONIC GROUP
-
+<!-- ## HEALTHY GROUP -->
 ```{r echo=FALSE, warning=FALSE}
-set.seed(1)
-
-leger_chronic_m1 <- leger_chronic %>%
-  select(vaccine_dummy, age_yrs, sex, hoinc, edu, province, wave, any_m_health, chronic_multi, distress_rev, concern_sq002) %>%
-  filter(sex %in% c("Male", "Female")) %>%
-  mutate(education = as.numeric(case_when(edu == "Never been" ~ 0, 
-                                          edu == "Primary" ~ 1,
-                                          edu == "Secondary" ~ 2,
-                                          edu == "College" ~ 3,
-                                          edu == "Graduate" ~ 4)))
-
-m1_chronic <- glm(distress_rev ~ age_yrs + sex + province + education + hoinc + any_m_health + chronic_multi + wave + concern_sq002,
-                  data = leger_chronic_m1)
-
-tab_model(m1_chronic)
-
+# set.seed(1)
+# 
+# leger_healthy_m1 <- leger %>%
+#   filter(chronic_dummy == 0) %>%
+#   select(vaccine_dummy, age_yrs, sex, hoinc, edu, province, wave, any_m_health, chronic_multi, distress_rev, concern_sq002) %>%
+#   filter(sex %in% c("Male", "Female")) %>%
+#   mutate(education = as.numeric(case_when(edu == "Never been" ~ 0, 
+#                                           edu == "Primary" ~ 1,
+#                                           edu == "Secondary" ~ 2,
+#                                           edu == "College" ~ 3,
+#                                           edu == "Graduate" ~ 4)))
+# 
+# m1_healthy <- glm(distress_rev ~ age_yrs + sex + province + education + hoinc + any_m_health + wave + concern_sq002,
+#                   data = leger_healthy_m1)
+# 
+# tab_model(m1_healthy)
 ```
 
-## HEALTHY GROUP
-```{r echo=FALSE, warning=FALSE}
-set.seed(1)
-
-leger_healthy_m1 <- leger %>%
-  filter(chronic_dummy == 0) %>%
-  select(vaccine_dummy, age_yrs, sex, hoinc, edu, province, wave, any_m_health, chronic_multi, distress_rev, concern_sq002) %>%
-  filter(sex %in% c("Male", "Female")) %>%
-  mutate(education = as.numeric(case_when(edu == "Never been" ~ 0, 
-                                          edu == "Primary" ~ 1,
-                                          edu == "Secondary" ~ 2,
-                                          edu == "College" ~ 3,
-                                          edu == "Graduate" ~ 4)))
-
-m1_healthy <- glm(distress_rev ~ age_yrs + sex + province + education + hoinc + any_m_health + wave + concern_sq002,
-                  data = leger_healthy_m1)
-
-tab_model(m1_healthy)
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+# 
+# leger %>%
+#   filter(sex %in% c("Female", "Male")) %>%
+#   group_by(chronic_dummy, sex) %>%
+#   count()
+# 
+# shapiro.test(a$distress_rev)
+# 
+# a<- leger %>%
+#   filter(sex == "Male") %>%
+#   filter(chronic_dummy == 0)
+# 
+# hist(a$distress_rev)
+# shapiro.test(a$distress_rev)
 ```
 
 ## DISCUSSION
 
+For now, see the project log.
