@@ -18,27 +18,26 @@ cmaj_analysis <- leger_raw %>%
   filter(wave %in% c(2:7)) %>%
   filter(age_yrs < 40) %>%
   select(rowid, date_part,
-         prov, sex, age_yrs, recimp, medins, edu, ethn, hoinc, reven, area, # demographic factors
+         prov, sex, age_yrs, recimp, medins, edu, hoinc, reven, area, # demographic factors
          emplstat_sq001:emplstat_sq008,
-         concern_sq001:concern_sq005, 
-         concern_sq008, concern_sq016, concern_sq017, concern_sq019, concern_sq020, # concerns
-         impacvd_sq001:impacvd_sq003,impacvd_sq006, impacvd_sq020, # impacts
+         impacvd_sq001:impacvd_sq004,impacvd_sq006, impacvd_sq020, # impacts
          hecond_sq001:hecond_sq011, # self-reported chronic conditions
          phyhe, menthe, wave, pond,
          cvdvacci, cvdvacc_v2, contrpos, vacboos, #vaccination questions
-         contains("inflvac"), contains("inflvade")) %>%
+         contains("inflvac"), contains("inflvade"))
+
+
+cmaj_analysis$impacvd_sq001 <- -cmaj_analysis$impacvd_sq001+4 # reverse code the impact so that higher value means
+cmaj_analysis$impacvd_sq002 <- -cmaj_analysis$impacvd_sq002+4
+cmaj_analysis$impacvd_sq003 <- -cmaj_analysis$impacvd_sq003+4
+cmaj_analysis$impacvd_sq004 <- -cmaj_analysis$impacvd_sq004+4
+
+cmaj_analysis <- cmaj_analysis %>%
   dplyr::mutate_at(vars(hecond_sq001, hecond_sq002, hecond_sq003, hecond_sq004,
                         hecond_sq005, hecond_sq006, hecond_sq007, hecond_sq008, 
-                        hecond_sq009, hecond_sq010, hecond_sq011), ~ifelse(. == 2, 0, .)) %>% # recode into dummy with 1 and 0 for chronic conditions, easier for counting
+                        hecond_sq009, hecond_sq010, hecond_sq011), ~ifelse(. == 2, 0, .)) %>% # recode into dummy with 1 and 0 for chronic conditions, easier for counting  rowwise() %>%
   rowwise() %>%
-  dplyr::mutate(ethnicity = case_when(ethn == 1 ~ 1, # recode ethnicity for fewer categories
-                               ethn == 3 ~ 2, ## LATER realized there is no data on ethnicity
-                               ethn == 4 ~ 3,
-                               ethn == 6 ~ 4,
-                               ethn == 7 ~ 5,
-                               ethn == 2 | ethn == 5 | ethn == 8 | ethn == 9 | ethn == 10 | ethn == 11 ~ 6,
-                               ethn == 12 | ethn == 13 | ethn == 14 ~ 7),
-         employment = case_when(emplstat_sq001 == 1 ~ 1,
+  dplyr::mutate(employment = case_when(emplstat_sq001 == 1 ~ 1,
                                 emplstat_sq002 == 1 ~ 2,
                                 emplstat_sq003 == 1 ~ 3,
                                 emplstat_sq004 == 1 ~ 4,
@@ -60,7 +59,7 @@ cmaj_analysis <- leger_raw %>%
                                          hecond_sq006 == 1 ~ "Obesity",
                                          hecond_sq007 == 1 ~ "Autoimmune",
                                          hecond_immune == 1 ~ "Other"),
-         distress = sum(c(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004), na.rm = FALSE),
+         distress_sum = sum(c(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004), na.rm = FALSE),
          depression = case_when(hecond_sq008 == 2 ~ 0,
                                 hecond_sq008 == 1 ~ 1),
          anxiety = case_when(hecond_sq009 == 2 ~ 0,
@@ -121,10 +120,7 @@ cmaj_analysis <- leger_raw %>%
                                         prov > 6 ~ "East")),
          edu = factor(edu, 
                       levels = c(1:6),
-                      labels = c("Primary", "Secondary", "College", "Graduate", "Never been" ,"Prefer not to answer"))) %>%
-  dplyr::mutate(distress_rev = 17-distress) %>%
-  dplyr::mutate(distress_rev = distress_rev + 3)
-
+                      labels = c("Primary", "Secondary", "College", "Graduate", "Never been" ,"Prefer not to answer")))
 
 # Save the new data file for the analyses
 write_csv(cmaj_analysis, "data/cmaj_analyses.csv")

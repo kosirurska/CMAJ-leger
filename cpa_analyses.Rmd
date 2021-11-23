@@ -37,3 +37,8 @@ cpa_data %>%
   kable() %>%
   kable_styling(full_width = FALSE, "hover")
 ```
+
+* Need exact descriptive statistics (sex distribution, age, ???)
+* need to create the grouping variable to be used as predictor
+* make sure the descriptives use the weights
+* 2 logistic models as specified 

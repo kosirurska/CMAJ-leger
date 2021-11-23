@@ -66,3 +66,9 @@ Covariates to consider:
 * *hoinc* = perceived income, as a proxy for socio-economic status
 
 --> These could be considered in sensitivity analyses. 
+
+**Tuesday, Nov. 23, 2021**
+
+Back to some data-pre-processing - recoded the distress sum so that each item is reverse coded instead of the sum. Nothing in the output changes, it is just a personal preference as it is more intuitive to read lower numbers as lower distress/extent.
+
+Started working on the analyses within groups over time.

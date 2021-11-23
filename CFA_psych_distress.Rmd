@@ -31,14 +31,13 @@ leger_cfa <- read_csv("data/cmaj_analyses.csv") %>%
   filter(wave == 2) %>%
   select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
   drop_na()
-
 ```
 
 #### Aims:
 Perform CFA for the distress scale
 
-## Zero-order polychoric item to item correlations
-```{r echo=FALSE, }
+### Zero-order polychoric item to item correlations
+```{r echo=FALSE, message = FALSE}
 poly_cors<-polychoric(leger_cfa)
 
 items_polychoric <- poly_cors$rho
@@ -52,4 +51,13 @@ items_polychoric %>%
   kable_styling("hover")
 ```
 
+```{r echo=FALSE, message=FALSE}
+#one factor three items, default marker method
+m1  <- ' f  =~ impacvd_sq001 + impacvd_sq002 + impacvd_sq003 + impacvd_sq004'
+
+cfa_m1 <- cfa(m1, data=leger_cfa)
+
+summary(cfa_m1, fit.measures=TRUE, standardized=TRUE) 
+# modindices(cfa_m1, sort. = TRUE)
+```
 

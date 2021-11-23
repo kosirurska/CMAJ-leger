@@ -17,13 +17,13 @@ leger_raw <- rowid_to_column(leger_raw)
 cpa_analysis <- leger_raw %>%
   filter(wave %in% c(2:7)) %>%
   filter(age_yrs <110) %>% # filtering out 3 rows with the values of 205, 333, and 559
-  select(prov, sex, age_yrs, recimp, medins, hoinc, reven, area, # demographic factors
-         impacvd_sq001,impacvd_sq006, impacvd_sq020, # impacts
-         contains("hecond"), # self-reported chronic conditions
-         wave, pond) %>%
+  select(prov, sex, age_yrs, hoinc, area, wave, pond, # demographic factors
+         impacvd_sq001, impacvd_sq006, impacvd_sq020, # impacts
+         contains("hecond")) %>% # self-reported chronic conditions
   dplyr::mutate_at(vars(hecond_sq001, hecond_sq002, hecond_sq003, hecond_sq004,
                         hecond_sq005, hecond_sq006, hecond_sq007, hecond_sq008, 
                         hecond_sq009, hecond_sq010, hecond_sq011), ~ifelse(. == 2, 0, .)) %>% # recode into dummy with 1 and 0 for chronic conditions, easier for counting
+  dplyr::mutate_at(vars(impacvd_sq006, impacvd_sq020), ~ifelse(. == 4, 1, 0)) %>% # dichotomized the outcomes for binary logistic regression
   rowwise() %>%
   dplyr::mutate(hecond_immune = coalesce(hecond_sq010, hecond_sq011),
                 chronic = sum(c(hecond_sq001, hecond_sq002, hecond_sq003, hecond_sq004, hecond_sq005, hecond_sq006, hecond_sq007, hecond_immune), na.rm = T),
@@ -55,6 +55,7 @@ cpa_analysis <- leger_raw %>%
                         levels = c(1:4),
                         labels = c("Bottom 3rd", "Middle 3rd", "Top 3rd", "Prefer not to answer")))
 
+cpa_analysis$impacvd_sq001 <- -cpa_analysis$impacvd_sq001+4 # reverse code the impact so that higher value means
 
 # Save the new data file for the analyses
-write_csv(cpa_analysis, "data/cpa_analyses.csv")
+write_csv(cpa_analysis, "CPA_2021/cpa_analyses.csv")
