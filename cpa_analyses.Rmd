@@ -1,0 +1,39 @@
+---
+title: "CPA 2021: A comparison of healthcare impacts during COVID-19 in Canadians with non-communicable chronic diseases and psychological disorders and healthy individuals: Results from the iCARE Study"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load the libraries
+library(tidyverse)
+library(readr)
+library(here)
+library(psych)
+library(english)
+library(stringr)
+library(tableone)
+library(kableExtra)
+library(scales)
+library(ggridges)
+library(plotly)
+library(patchwork)
+library(haven)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(table1)
+library(rstatix)
+```
+
+```{r data, echo=FALSE, message=FALSE, warning=FALSE}
+# Read in the clean csv file
+cpa_data <- read_csv("CPA_2021/cpa_analyses.csv")
+
+cpa_data %>%
+  filter(sex %in% c("Female", "Male")) %>%
+  group_by(chronic_dummy, comorbid_dep_anx) %>%
+  count() %>%
+  kable() %>%
+  kable_styling(full_width = FALSE, "hover")
+```
