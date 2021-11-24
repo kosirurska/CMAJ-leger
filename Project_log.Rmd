@@ -71,4 +71,8 @@ Covariates to consider:
 
 Back to some data-pre-processing - recoded the distress sum so that each item is reverse coded instead of the sum. Nothing in the output changes, it is just a personal preference as it is more intuitive to read lower numbers as lower distress/extent.
 
+**Wednesday, Nov. 24, 2021**
+
+Evaluated feasibility of running ANOVAs by checking the assumptions. In some cases robust models will be necessary. 
+
 Started working on the analyses within groups over time.
