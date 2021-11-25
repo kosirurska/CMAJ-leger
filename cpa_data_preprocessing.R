@@ -53,7 +53,11 @@ cpa_analysis <- leger_raw %>%
                        labels = c("Rural", "Suburban", "Urban", "Prefer not to answer")),
          hoinc = factor(hoinc, 
                         levels = c(1:4),
-                        labels = c("Bottom 3rd", "Middle 3rd", "Top 3rd", "Prefer not to answer")))
+                        labels = c("Bottom 3rd", "Middle 3rd", "Top 3rd", "Prefer not to answer")),
+         group = case_when(chronic_dummy == 0 & comorbid_dep_anx == 0 ~ 0,
+                           chronic_dummy == 0 & comorbid_dep_anx == 1 ~ 1,
+                           chronic_dummy == 1 & comorbid_dep_anx == 0 ~ 2,
+                           chronic_dummy == 1 & comorbid_dep_anx == 1 ~ 3))
 
 cpa_analysis$impacvd_sq001 <- -cpa_analysis$impacvd_sq001+4 # reverse code the impact so that higher value means
 
