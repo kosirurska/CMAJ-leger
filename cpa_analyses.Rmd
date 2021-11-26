@@ -1,5 +1,5 @@
 ---
-title: "CPA 2021: A comparison of healthcare impacts during COVID-19 in Canadians with non-communicable chronic diseases and psychological disorders and healthy individuals: Results from the iCARE Study"
+title: "CPA 2022 abstract"
 output: html_document
 ---
 
@@ -24,21 +24,154 @@ library(sjmisc)
 library(sjlabelled)
 library(table1)
 library(rstatix)
+library(sjstats)
 ```
 
 ```{r data, echo=FALSE, message=FALSE, warning=FALSE}
 # Read in the clean csv file
 cpa_data <- read_csv("CPA_2021/cpa_analyses.csv")
 
-cpa_data %>%
-  filter(sex %in% c("Female", "Male")) %>%
-  group_by(chronic_dummy, comorbid_dep_anx) %>%
-  count() %>%
-  kable() %>%
-  kable_styling(full_width = FALSE, "hover")
+```
+## Weighted descriptive info
+* sex distribution
+* average age
+* depression 
+* anxiety
+* comorbid 
+```{r echo=FALSE}
+library(pollster)
+data_table <- cpa_data %>%
+  mutate(group = case_when(chronic_dummy == 0 & comorbid_dep_anx == 0 ~ "Healthy",
+                           chronic_dummy == 0 & comorbid_dep_anx == 1 ~ "Healthy PD",
+                           chronic_dummy == 1 & comorbid_dep_anx == 0 ~ "NCD",
+                           chronic_dummy == 1 & comorbid_dep_anx == 1 ~ "NCD PD"))
+
+data_table %>%
+  group_by(group) %>%
+  count()
 ```
 
-* Need exact descriptive statistics (sex distribution, age, ???)
-* need to create the grouping variable to be used as predictor
-* make sure the descriptives use the weights
-* 2 logistic models as specified 
+## OUTCOME 6 - Descriptive Healthy vs healthy PD
+
+I have cancelled medical appointments or going to the emergency room for a non-COVID-related problem
+1 = great extent
+0 = all others
+```{r echo=FALSE, warning=FALSE}
+healthy <- cpa_data %>%
+  filter(group == 0 | group == 1) %>%
+  mutate(group = case_when(group == 0 ~ "Healthy",
+                           group == 1 ~ "Healthy PD")) 
+healthy %>%
+  group_by(group, impacvd_sq006) %>%
+  count() %>%
+  drop_na %>%
+  group_by(group) %>%
+  mutate(sum_grp = sum(n),
+         prop = round((n/sum_grp*100),2)) %>%
+  select(-sum_grp) %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+weighted_chisqtest(healthy, 
+                   x = impacvd_sq006,
+                   y = group,
+                   weights = pond)
+```
+
+## OUTCOME 6- Descriptive NCD vs NCD PD
+```{r echo=FALSE, warning=FALSE}
+ncd <- cpa_data %>%
+  filter(group == 2 | group == 3) %>%
+  mutate(group = case_when(group == 2 ~ "NCD",
+                           group == 3 ~ "NCD PD")) 
+ncd %>%
+  group_by(group, impacvd_sq006) %>%
+  count() %>%
+  drop_na %>%
+  group_by(group) %>%
+  mutate(sum_grp = sum(n),
+         prop = round((n/sum_grp*100),2)) %>%
+  select(-sum_grp) %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+weighted_chisqtest(ncd, 
+                   x = impacvd_sq006,
+                   y = group,
+                   weights = pond)
+```
+
+## OUTCOME 20 - Descriptive Healthy vs healthy PD
+Trouble getting non-COVID-related care
+1 = great extent
+0 = all others
+```{r echo=FALSE, warning=FALSE}
+healthy2 <- cpa_data %>%
+  filter(group == 0 | group == 1) %>%
+  mutate(group = case_when(group == 0 ~ "Healthy",
+                           group == 1 ~ "Healthy PD")) 
+healthy2 %>%
+  group_by(group, impacvd_sq020) %>%
+  count() %>%
+  drop_na %>%
+  group_by(group) %>%
+  mutate(sum_grp = sum(n),
+         prop = round((n/sum_grp*100),2)) %>%
+  select(-sum_grp) %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+weighted_chisqtest(healthy2, 
+                   x = impacvd_sq020,
+                   y = group,
+                   weights = pond)
+```
+
+## OUTCOME 20 - Descriptive NCD vs NCD PD
+```{r echo=FALSE, warning=FALSE}
+ncd2 <- cpa_data %>%
+  filter(group == 2 | group == 3) %>%
+  mutate(group = case_when(group == 2 ~ "NCD",
+                           group == 3 ~ "NCD PD")) 
+
+ncd2 %>%
+  group_by(group, impacvd_sq020) %>%
+  count() %>%
+  drop_na %>%
+  group_by(group) %>%
+  mutate(sum_grp = sum(n),
+         prop = round((n/sum_grp*100),2)) %>%
+  select(-sum_grp) %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+
+weighted_chisqtest(ncd2, 
+                   x = impacvd_sq020,
+                   y = group,
+                   weights = pond)
+```
+
+### LOGIT MODELS - IMP 06 & 20 as outcomes
+```{r log. reg, echo=FALSE, warning=FALSE}
+# # LOGIT FOR CONCERN 2 - Impact on my health, including dying
+cpa_data1 <- cpa_data %>%
+  select(impacvd_sq006,impacvd_sq020, group, chronic_dummy, comorbid_dep_anx, age_yrs, sex, wave, pond) %>%
+  #mutate(group = as.factor(group)) %>%
+  mutate(group = case_when(chronic_dummy == 0 & comorbid_dep_anx == 0 ~ "Healthy",
+                           chronic_dummy == 0 & comorbid_dep_anx == 1 ~ "Healthy PD",
+                           chronic_dummy == 1 & comorbid_dep_anx == 0 ~ "NCD",
+                           chronic_dummy == 1 & comorbid_dep_anx == 1 ~ "NCD PD"))
+
+logit_m1 <- glm(impacvd_sq006 ~ group + age_yrs + sex + wave,
+                family = "binomial",
+                data = cpa_data1,
+                weights = pond)
+
+logit_m2 <- glm(impacvd_sq020 ~ group + age_yrs + sex + wave,
+                family = "binomial",
+                data = cpa_data1,
+                weights = pond)
+
+tab_model(logit_m1, logit_m2)
+```
+
