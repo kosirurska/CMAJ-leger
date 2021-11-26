@@ -33,11 +33,12 @@ cpa_data <- read_csv("CPA_2021/cpa_analyses.csv")
 
 ```
 ## Weighted descriptive info
-* sex distribution
-* average age
-* depression 
-* anxiety
-* comorbid 
+* sex distribution F = 51.6% (N = 9,164), M = 49.4% (N = 8,567)
+* average age = 48.25 years, SD = 16.9
+* depression = yes = 15.9% (N = 2,845), no = 84.1% (N = 14,971)
+* anxiety = yes = 21.1% (N = 3,763), no = 78.9% (N = 14,053)
+* comorbid anxiety and depression = yes = 12% (N = 2,145), no = 88% (N = 15,671)
+
 ```{r echo=FALSE}
 library(pollster)
 data_table <- cpa_data %>%
@@ -49,6 +50,11 @@ data_table <- cpa_data %>%
 data_table %>%
   group_by(group) %>%
   count()
+
+weighted_mean(data_table$age_yrs)
+weighted_sd(data_table$age_yrs)
+
+topline(df = data_table, variable = comorbid_dep_anx, weight = pond)
 ```
 
 ## OUTCOME 6 - Descriptive Healthy vs healthy PD
