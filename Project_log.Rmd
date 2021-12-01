@@ -78,7 +78,10 @@ Evaluated feasibility of running ANOVAs by checking the assumptions. In some cas
 Started working on the analyses within groups over time.
 
 **Wednesday, Dec. 1, 2021**
+
 Met with TBP and KJD to discuss the output of ANCOVAs Plotted covid cases in canada and aligned the plot with the surveys.
 Getting ready to write up the manuscrupt. Need to prepare the figures, I think I will add marginal means with se for the trend and the boxplot broken down by sex.
+
+Data for the cases plot was extracted on December 1, 2021 from the [government's website](https://health-infobase.canada.ca/covid-19/epidemiological-summary-covid-19-cases.html?stat=num&measure=active&map=pt#a2).
 
 
