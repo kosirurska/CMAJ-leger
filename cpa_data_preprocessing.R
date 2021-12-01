@@ -23,7 +23,7 @@ cpa_analysis <- leger_raw %>%
   dplyr::mutate_at(vars(hecond_sq001, hecond_sq002, hecond_sq003, hecond_sq004,
                         hecond_sq005, hecond_sq006, hecond_sq007, hecond_sq008, 
                         hecond_sq009, hecond_sq010, hecond_sq011), ~ifelse(. == 2, 0, .)) %>% # recode into dummy with 1 and 0 for chronic conditions, easier for counting
-  dplyr::mutate_at(vars(impacvd_sq006, impacvd_sq020), ~ifelse(. == 4, 1, 0)) %>% # dichotomized the outcomes for binary logistic regression
+  dplyr::mutate_at(vars(impacvd_sq006, impacvd_sq020), ~ifelse(. == 1, 1, 0)) %>% # dichotomized the outcomes for binary logistic regression
   rowwise() %>%
   dplyr::mutate(hecond_immune = coalesce(hecond_sq010, hecond_sq011),
                 chronic = sum(c(hecond_sq001, hecond_sq002, hecond_sq003, hecond_sq004, hecond_sq005, hecond_sq006, hecond_sq007, hecond_immune), na.rm = T),

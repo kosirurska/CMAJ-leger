@@ -1,0 +1,429 @@
+---
+title: "Psychological distress during COVID-19 in Canadian youth with and without chronic health conditions"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load the libraries
+library(tidyverse)
+library(readr)
+library(here)
+library(psych)
+library(english)
+library(stringr)
+library(tableone)
+library(kableExtra)
+library(scales)
+library(ggridges)
+library(plotly)
+library(patchwork)
+library(haven)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(table1)
+library(rstatix)
+library(car)
+library(multcomp)
+#library(compute.se)
+library(effects)
+library(pastecs)
+#library(WRS)
+```
+
+```{r data, echo=FALSE, message=FALSE, warning=FALSE}
+# Read in the clean csv file
+leger <- read_csv("data/cmaj_analyses.csv")
+
+# subset for chronic people only
+leger_chronic <- leger %>%
+  filter(chronic_dummy == 1)
+
+# set seed for all analyses and wrangling
+set.seed(1)
+```
+
+#### Aims:
+Using Canadian representative samples, we aimed 
+
+1) Report any differences in psychological functioning (feelings of anxiety, depression, loneliness, anger/frustration)  among young people with different medical needs, and see how it changed over the course of the pandemic;
+
+2) compare young people with any chronic health condition to their healthy peers in terms of COVID-19 impact on psychological functioning.
+
+## METHOD
+
+The present study is part of a larger International COVID‐19 Awareness and Responses Evaluation (iCARE) study, which is a global multi‐phase research survey conducted through the Montreal Behavioural Medicine Centre. Find more about the study and materials at [www.iCAREstudy.com](www.iCAREstudy.com). 
+
+## RESULTS
+### Sample
+
+```{r echo=FALSE, warning=FALSE}
+table_data <- leger %>%
+  dplyr::select(age_yrs, sex, edu, hoinc, province_full, chronic_descriptive, chronic_dummy, chronic_multi, any_m_health, distress_sum, vaccine, booster_dummy) %>%
+  mutate(chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("Healthy", "Chronic Health Condition")),
+         chronic_multi = factor(chronic_multi, 
+                                levels = c(0:1),
+                                labels = c("No", "Yes")),
+         any_m_health = factor(any_m_health,
+                               levels = c(0:1),
+                               labels = c("No", "Yes")))
+
+label(table_data$sex) <- "Sex"
+label(table_data$age_yrs) <- "Age"
+label(table_data$edu) <- "Education"
+label(table_data$province_full) <- "Province"
+label(table_data$hoinc) <- "Income"
+label(table_data$chronic_descriptive) <- "Chronic illness"
+label(table_data$chronic_multi) <- "Multimorbidity"
+label(table_data$any_m_health) <- "Diagnosis of mental health disorder"
+label(table_data$distress_sum) <- "COVID-19 distress"
+label(table_data$vaccine) <- "Received COVID-19 vaccine?"
+label(table_data$booster_dummy) <- "Likelihood of taking COVID-19 booster dose?"
+
+units(table_data$age_yrs) <- "years"
+
+table1(~ age_yrs + sex + edu + hoinc + province_full + chronic_descriptive + chronic_multi + any_m_health + distress_sum + vaccine + booster_dummy | chronic_dummy,
+       data = table_data)
+
+```
+
+### COVID-19 related psychological distress over time
+
+```{r echo=FALSE, message = FALSE, warning=FALSE, fig.width= 12, fig.height=6}
+A<-leger %>%
+  dplyr::select(chronic_dummy, wave, distress_sum, sex) %>%
+  #filter(sex %in% c("Female", "Male")) %>%
+  mutate(chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("No", "Yes")),
+         wave = as.factor(wave)) %>%
+  ggplot(aes(x = wave)) +
+  geom_boxplot(aes(y = distress_sum, fill=chronic_dummy)) +
+  labs(title = "", x = " ", y = "Level of psychological distress", fill = "Chronic condition",
+       caption = "Distress was significantly different across time only in individuals with no chronic health conditions. \nThe p-values demonstrate the survey rounds that were significanlty different than the first point (2). Numbers in brackets stand for the survey wave.") +
+  ylim(0, 13) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_text(label = "Ref.", x = 0.8, y = 12.5, size = 2.5) +
+  geom_text(label = "** \np = 0.001", x = 1.8, y = 12.5, size = 2.5) +
+  geom_text(label = "*** \np < 0.001", x = 2.8, y = 12.5, size = 2.5) +
+  geom_text(label = "*** \np < 0.001", x = 3.8, y = 12.5, size = 2.5) +
+  scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
+                     labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
+                                "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
+
+
+C<-leger %>%
+  dplyr::select(chronic_dummy, wave, distress_sum, sex) %>%
+  filter(sex %in% c("Female", "Male")) %>%
+  mutate(chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("No", "Yes")),
+         wave = as.factor(wave)) %>%
+  ggplot(aes(x = wave)) +
+  geom_boxplot(aes(y = distress_sum, fill=chronic_dummy)) +
+  #facet_wrap(~chronic_dummy) +
+  labs(title = " ", x = "Survey round", y = "Level of psychological distress", fill = "Chronic condition") +
+  facet_wrap(~sex, ncol = 1) +
+  ylim(0, 13) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
+                     labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
+                                "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
+
+# 
+# GeomSplitViolin <- ggproto("GeomSplitViolin", GeomViolin, 
+#                            draw_group = function(self, data, ..., draw_quantiles = NULL) {
+#   data <- transform(data, xminv = x - violinwidth * (x - xmin), xmaxv = x + violinwidth * (xmax - x))
+#   grp <- data[1, "group"]
+#   newdata <- plyr::arrange(transform(data, x = if (grp %% 2 == 1) xminv else xmaxv), if (grp %% 2 == 1) y else -y)
+#   newdata <- rbind(newdata[1, ], newdata, newdata[nrow(newdata), ], newdata[1, ])
+#   newdata[c(1, nrow(newdata) - 1, nrow(newdata)), "x"] <- round(newdata[1, "x"])
+# 
+#   if (length(draw_quantiles) > 0 & !scales::zero_range(range(data$y))) {
+#     stopifnot(all(draw_quantiles >= 0), all(draw_quantiles <=
+#       1))
+#     quantiles <- ggplot2:::create_quantile_segment_frame(data, draw_quantiles)
+#     aesthetics <- data[rep(1, nrow(quantiles)), setdiff(names(data), c("x", "y")), drop = FALSE]
+#     aesthetics$alpha <- rep(1, nrow(quantiles))
+#     both <- cbind(quantiles, aesthetics)
+#     quantile_grob <- GeomPath$draw_panel(both, ...)
+#     ggplot2:::ggname("geom_split_violin", grid::grobTree(GeomPolygon$draw_panel(newdata, ...), quantile_grob))
+#   }
+#   else {
+#     ggplot2:::ggname("geom_split_violin", GeomPolygon$draw_panel(newdata, ...))
+#   }
+# })
+# 
+# geom_split_violin <- function(mapping = NULL, data = NULL, stat = "ydensity", position = "identity", ..., 
+#                               draw_quantiles = NULL, trim = TRUE, scale = "area", na.rm = FALSE, 
+#                               show.legend = NA, inherit.aes = TRUE) {
+#   layer(data = data, mapping = mapping, stat = stat, geom = GeomSplitViolin, 
+#         position = position, show.legend = show.legend, inherit.aes = inherit.aes, 
+#         params = list(trim = trim, scale = scale, draw_quantiles = draw_quantiles, na.rm = na.rm, ...))
+# }
+# 
+# leger %>%
+#   dplyr::select(chronic_dummy, wave, distress_sum, sex) %>%
+#   filter(sex %in% c("Female", "Male")) %>%
+#   mutate(m = factor(chronic_dummy,
+#                                 levels = c(0:1),
+#                                 labels = c("No", "Yes")),
+#          x = as.factor(wave),
+#          y = distress_sum) %>%
+#   ggplot(aes(x, y, fill = m)) +
+#   geom_split_violin() +
+#   labs(title = "Split violin (density) plot", x = "Survey round", y = "Level of psychological distress", fill = "Chronic condition") +
+#   #facet_grid(~sex) +
+#   ylim(0, 12) +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
+#                      labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
+#                                 "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
+
+## PLOT CASES
+covid_cases <- read_csv("data/covid19-download.csv")
+
+B<-covid_cases %>%
+  filter(date > "2020-06-01") %>% 
+  filter(date < "2021-09-20") %>%
+  ggplot(aes(x = date, y = numtoday, fill = numtoday)) +
+  geom_line(color = "light blue") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "1 month") +
+  labs(x = "Time", y = "Number of COVID-19 cases")
+```
+
+```{r echo=FALSE, warning=FALSE, fig.width= 12, fig.height=14}
+(A/B) + plot_annotation(tag_levels = 'A')
+```
+
+
+### Within-group comparisons over time, adjusted for age & sex
+
+#### Chronic health conditions over time
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+chronic <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, hoinc, chronic_dummy, wave) %>%
+  filter(chronic_dummy == 1)%>%
+  mutate(wave = factor(wave, ordered = TRUE))
+
+# Levene's test for homogeneity of variance
+levene_test(chronic, distress_sum ~ wave)
+
+# ANCOVA
+m1 = aov(distress_sum ~ wave + sex + age_yrs, data = chronic)
+
+Anova(m1, type="III")
+
+# To get adjusted or marginal means
+m2_adjusted <- effect("wave", m2, se=TRUE)
+summary(m2_adjusted)
+m2_adjusted$se
+
+# m1_posthoc <- glht(m1, linfct = mcp(wave = "Tukey"))
+# summary(m1_posthoc)
+```
+
+#### Healthy over time
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+healthy <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, hoinc, chronic_dummy, wave) %>%
+  filter(chronic_dummy == 0)%>%
+  mutate(wave = factor(wave, ordered = TRUE))
+
+# Leven's test
+levene_test(healthy, distress_sum ~ wave)
+
+# ANCOVA
+m2 = aov(distress_sum ~ wave + sex + age_yrs, data = healthy)
+
+Anova(m2, type="III")
+
+m2_posthoc <- glht(m2, linfct = mcp(wave = "Tukey"))
+summary(m2_posthoc)
+
+```
+
+Discussion - covariates?
+
+### DISTRESS WOMEN with chronic health v. no chronic health at each survey wave -->
+
+In short - significant differences occur at waves: 2,3,4,6,7
+
+#### wave 2
+```{r echo=FALSE}
+w2_female <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
+  filter(sex == "Female") %>%
+  filter(wave == 2)
+  
+# ANCOVA
+w2_m1 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w2_female)
+
+Anova(w2_m1, type="III")
+
+#wilcox.test(w2_female$distress_sum ~ w2_female$chronic_dummy)
+```
+#### wave 3
+```{r echo=FALSE}
+w3_female <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
+  filter(sex == "Female") %>%
+  filter(wave == 3)
+
+# ANCOVA
+w3_m1 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w3_female)
+
+Anova(w3_m1, type="III")
+
+#wilcox.test(w3_female$distress_sum ~ w3_female$chronic_dummy)
+```
+#### wave 4
+```{r echo=FALSE}
+w4_female <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
+  filter(sex == "Female") %>%
+  filter(wave == 4)
+
+# ANCOVA
+w4_m1 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w4_female)
+
+Anova(w4_m1, type="III")
+
+# wilcox.test(w4_female$distress_sum ~ w4_female$chronic_dummy)
+```
+#### wave 5
+```{r echo=FALSE}
+w5_female <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
+  filter(sex == "Female") %>%
+  filter(wave == 5)
+
+# ANCOVA
+w5_m1 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w5_female)
+
+Anova(w5_m1, type="III")  
+# wilcox.test(w5_female$distress_sum ~ w5_female$chronic_dummy)
+```
+#### wave 6
+```{r echo=FALSE}
+w6_female <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
+  filter(sex == "Female") %>%
+  filter(wave == 6)
+
+# ANCOVA
+w6_m1 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w6_female)
+
+Anova(w6_m1, type="III")   
+# wilcox.test(w6_female$distress_sum ~ w6_female$chronic_dummy)
+```
+#### wave 7
+```{r echo=FALSE}
+w7_female <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
+  filter(sex == "Female") %>%
+  filter(wave == 7)
+
+# ANCOVA
+w7_m1 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w7_female)
+
+Anova(w7_m1, type="III")  
+# wilcox.test(w7_female$distress_sum ~ w7_female$chronic_dummy)
+```
+
+### DISTRESS MEN with chronic health v. no chronic health at each survey wave -->
+
+In short - significant differences occur at wave 2,5,6,7
+
+#### wave 2
+```{r echo=FALSE}
+w2_male <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
+  filter(sex == "Male") %>%
+  filter(wave == 2)
+
+# ANCOVA
+w2_m2 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w2_male)
+
+Anova(w2_m2, type="III")
+# wilcox.test(w2_male$distress_sum ~ w2_male$chronic_dummy)
+```
+#### wave 3
+```{r echo=FALSE}
+w3_male <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
+  filter(sex == "Male") %>%
+  filter(wave == 3)
+  
+# ANCOVA
+w3_m2 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w3_male)
+
+Anova(w3_m2, type="III")
+# wilcox.test(w3_male$distress_sum ~ w3_male$chronic_dummy)
+```
+#### wave 4
+```{r echo=FALSE}
+w4_male <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
+  filter(sex == "Male") %>%
+  filter(wave == 4)
+
+# ANCOVA
+w4_m2 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w4_male)
+
+Anova(w4_m2, type="III")  
+# wilcox.test(w4_male$distress_sum ~ w4_male$chronic_dummy)
+```
+#### wave 5
+```{r echo=FALSE}
+w5_male <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
+  filter(sex == "Male") %>%
+  filter(wave == 5)
+  
+# ANCOVA
+w5_m2 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w5_male)
+
+Anova(w5_m2, type="III")
+# wilcox.test(w5_male$distress_sum ~ w5_male$chronic_dummy)
+```
+#### wave 6
+```{r echo=FALSE}
+w6_male <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
+  filter(sex == "Male") %>%
+  filter(wave == 6)
+  
+# ANCOVA
+w6_m2 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w6_male)
+
+Anova(w6_m2, type="III")
+# wilcox.test(w6_male$distress_sum ~ w6_male$chronic_dummy)
+```
+#### wave 7
+```{r echo=FALSE}
+w7_male <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
+  filter(sex == "Male") %>%
+  filter(wave == 7)
+
+# ANCOVA
+w7_m2 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w7_male)
+
+Anova(w7_m2, type="III")  
+# wilcox.test(w7_male$distress_sum ~ w7_male$chronic_dummy)
+```
+
+## DISCUSSION
+
+For now, see the project log.
