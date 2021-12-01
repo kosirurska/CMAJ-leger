@@ -76,3 +76,9 @@ Back to some data-pre-processing - recoded the distress sum so that each item is
 Evaluated feasibility of running ANOVAs by checking the assumptions. In some cases robust models will be necessary. 
 
 Started working on the analyses within groups over time.
+
+**Wednesday, Dec. 1, 2021**
+Met with TBP and KJD to discuss the output of ANCOVAs Plotted covid cases in canada and aligned the plot with the surveys.
+Getting ready to write up the manuscrupt. Need to prepare the figures, I think I will add marginal means with se for the trend and the boxplot broken down by sex.
+
+
