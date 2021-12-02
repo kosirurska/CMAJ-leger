@@ -40,6 +40,13 @@ leger <- read_csv("data/cmaj_analyses.csv")
 leger_chronic <- leger %>%
   filter(chronic_dummy == 1)
 
+# Data for the plot
+marginal_means <- read_csv("data/marginal_means.csv")
+
+marginal_means_2 <- read_csv("data/marginal_means2.csv")
+
+covid_cases <- read_csv("data/covid19-download.csv")
+
 # set seed for all analyses and wrangling
 set.seed(1)
 ```
@@ -92,50 +99,53 @@ table1(~ age_yrs + sex + edu + hoinc + province_full + chronic_descriptive + chr
 
 ### COVID-19 related psychological distress over time
 
-```{r echo=FALSE, message = FALSE, warning=FALSE, fig.width= 12, fig.height=6}
-A<-leger %>%
-  dplyr::select(chronic_dummy, wave, distress_sum, sex) %>%
-  #filter(sex %in% c("Female", "Male")) %>%
-  mutate(chronic_dummy = factor(chronic_dummy,
-                                levels = c(0:1),
-                                labels = c("No", "Yes")),
-         wave = as.factor(wave)) %>%
-  ggplot(aes(x = wave)) +
-  geom_boxplot(aes(y = distress_sum, fill=chronic_dummy)) +
-  labs(title = "", x = " ", y = "Level of psychological distress", fill = "Chronic condition",
-       caption = "Distress was significantly different across time only in individuals with no chronic health conditions. \nThe p-values demonstrate the survey rounds that were significanlty different than the first point (2). Numbers in brackets stand for the survey wave.") +
-  ylim(0, 13) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  geom_text(label = "Ref.", x = 0.8, y = 12.5, size = 2.5) +
-  geom_text(label = "** \np = 0.001", x = 1.8, y = 12.5, size = 2.5) +
-  geom_text(label = "*** \np < 0.001", x = 2.8, y = 12.5, size = 2.5) +
-  geom_text(label = "*** \np < 0.001", x = 3.8, y = 12.5, size = 2.5) +
-  scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
-                     labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
-                                "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
+```{r echo=FALSE, message = FALSE, warning=FALSE, fig.width= 10, fig.height=8}
+# A<-leger %>%
+#   dplyr::select(chronic_dummy, wave, distress_sum, sex) %>%
+#   #filter(sex %in% c("Female", "Male")) %>%
+#   mutate(chronic_dummy = factor(chronic_dummy,
+#                                 levels = c(0:1),
+#                                 labels = c("No", "Yes")),
+#          wave = as.factor(wave)) %>%
+#   ggplot(aes(x = wave)) +
+#   geom_boxplot(aes(y = distress_sum, fill=chronic_dummy)) +
+#   labs(title = "", x = " ", y = "Level of psychological distress", fill = "Chronic condition",
+#        caption = "Distress was significantly different across time only in individuals with no chronic health conditions. \nThe p-values demonstrate the survey rounds that were significanlty different than the first point (2). Numbers in brackets stand for the survey wave.") +
+#   ylim(0, 13) +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   geom_text(label = "Ref.", x = 0.8, y = 12.5, size = 2.5) +
+#   geom_text(label = "** \np = 0.001", x = 1.8, y = 12.5, size = 2.5) +
+#   geom_text(label = "*** \np < 0.001", x = 2.8, y = 12.5, size = 2.5) +
+#   geom_text(label = "*** \np < 0.001", x = 3.8, y = 12.5, size = 2.5) +
+#   scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
+#                      labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
+#                                 "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
 
-
-C<-leger %>%
-  dplyr::select(chronic_dummy, wave, distress_sum, sex) %>%
-  filter(sex %in% c("Female", "Male")) %>%
-  mutate(chronic_dummy = factor(chronic_dummy,
-                                levels = c(0:1),
-                                labels = c("No", "Yes")),
-         wave = as.factor(wave)) %>%
-  ggplot(aes(x = wave)) +
-  geom_boxplot(aes(y = distress_sum, fill=chronic_dummy)) +
-  #facet_wrap(~chronic_dummy) +
-  labs(title = " ", x = "Survey round", y = "Level of psychological distress", fill = "Chronic condition") +
-  facet_wrap(~sex, ncol = 1) +
-  ylim(0, 13) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
-                     labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
-                                "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
-
+# This is boxplots by mental health diagnosis over time
+# leger %>%
+#   dplyr::select(chronic_dummy, wave, distress_sum, sex, any_m_health) %>%
+#   filter(sex %in% c("Female", "Male")) %>%
+#   mutate(chronic_dummy = factor(chronic_dummy,
+#                                 levels = c(0:1),
+#                                 labels = c("No", "Yes")),
+#          any_m_health = factor(any_m_health,
+#                                levels = c(0:1),
+#                                 labels = c("No", "Yes")),
+#          wave = as.factor(wave)) %>%
+#   ggplot(aes(x = wave)) +
+#   geom_boxplot(aes(y = distress_sum, fill=chronic_dummy)) +
+#   #facet_wrap(~chronic_dummy) +
+#   labs(title = " ", x = "Survey round", y = "Level of psychological distress", fill = "Chronic condition") +
+#   facet_wrap(~any_m_health, ncol = 2) +
+#   ylim(0, 13) +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
+#                      labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
+#                                 "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
 # 
+# # 
 # GeomSplitViolin <- ggproto("GeomSplitViolin", GeomViolin, 
 #                            draw_group = function(self, data, ..., draw_quantiles = NULL) {
 #   data <- transform(data, xminv = x - violinwidth * (x - xmin), xmaxv = x + violinwidth * (xmax - x))
@@ -187,11 +197,9 @@ C<-leger %>%
 #                                 "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
 
 ## PLOT CASES
-covid_cases <- read_csv("data/covid19-download.csv")
-
 B<-covid_cases %>%
   filter(date > "2020-06-01") %>% 
-  filter(date < "2021-09-20") %>%
+  filter(date < "2021-09-30") %>%
   ggplot(aes(x = date, y = numtoday, fill = numtoday)) +
   geom_line(color = "light blue") +
   theme_bw() +
@@ -201,44 +209,74 @@ B<-covid_cases %>%
   scale_x_date(date_labels = "%b %d", date_breaks = "1 month") +
   labs(x = "Time", y = "Number of COVID-19 cases")
 
-library(ggstatsplot)
-ggbetweenstats(
-  data = leger,
-  x = wave,
-  y = distress_sum
-) +
-  facet_grid(~chronic_dummy)
+D<-marginal_means %>%
+  mutate(chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("No", "Yes")),
+         wave = as.factor(wave)) %>%
+  ggplot(aes(x = wave, y = mean, color = chronic_dummy)) + 
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin=lower, ymax=upper), colour="black", width=.1) +
+  labs(title = "", x = " ", y = "Marginal mean of psychological distress", color = "Chronic condition"
+       # caption = "Distress was significantly different across time only in individuals with no chronic health conditions. \nThe p-values demonstrate the survey rounds that were significanlty different than the first point (2). Numbers in brackets stand for the survey wave."
+       ) +
+  ylim(4, 9) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_text(label = "Ref.", x = 1, y = 5.3, size = 2.5, show.legend = FALSE) +
+  geom_text(label = "** \np = 0.001", x = 2, y = 5.5, size = 2.5, show.legend = FALSE) +
+  geom_text(label = "*** \np < 0.001", x = 3, y = 5.5, size = 2.5, show.legend = FALSE) +
+  geom_text(label = "*** \np < 0.001", x = 4, y = 5.5, size = 2.5, show.legend = FALSE) +
+  scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
+                   labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
+                              "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
 
-# create a dataset
-data <- data.frame(
-  name=c( rep("A",500), rep("B",500), rep("B",500), rep("C",20), rep('D', 100)  ),
-  value=c( rnorm(500, 10, 5), rnorm(500, 13, 1), rnorm(500, 18, 1), rnorm(20, 25, 4), rnorm(100, 12, 1) )
-)
 
-data
+E <- marginal_means_2 %>%
+  mutate(chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("No", "Yes")),
+         wave = as.factor(wave)) %>%
+  ggplot(aes(x = wave, y = mean, color = chronic_dummy)) + 
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin=lower, ymax=upper), colour="black", width=.1) +
+  labs(title = "", x = " ", y = "Marginal mean of psychological distress", color = "Chronic condition") +
+  ylim(4.8, 9) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)
+        #legend.position = c(0.92, 0.89) ## if want to adjust the location of the legend
+        ) +
+  geom_text(label = "Ref.", x = 1, y = 5.4, size = 2.5, show.legend = FALSE) +
+  geom_text(label = "** \np = 0.001", x = 2, y = 5.5, size = 2.5, show.legend = FALSE) +
+  geom_text(label = "*** \np < 0.001", x = 3, y = 5.5, size = 2.5, show.legend = FALSE) +
+  geom_text(label = "*** \np < 0.001", x = 4, y = 5.5, size = 2.5, show.legend = FALSE) +
+    geom_text(label = "** \np = 0.002", x = 1, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
+  geom_text(label = "** \np = 0.001", x = 3, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
+  geom_text(label = ". \np = 0.054", x = 5, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
+  geom_text(label = "** \np = 0.006", x = 6, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
 
+  scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
+                   labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
+                              "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
+
+#D + E + plot_annotation(tag_levels = 'A')
 ```
 
-```{r echo=FALSE, warning=FALSE}
+```{r echo=FALSE, message = FALSE, warning=FALSE, fig.width= 10, fig.height=11}
 #fig.width= 12, fig.height=14
-(A/B) + plot_annotation(tag_levels = 'A')
+# (D/B) + plot_annotation(tag_levels = 'A')
 
-marginal_means <- read_csv("data/marginal_means.csv")
-
-marginal_means %>%
-  ggplot(aes(x = wave, y = mean, color = factor(chronic_dummy))) + 
-  geom_point(size = 2) +
-  geom_errorbar(aes(ymin=lower, ymax=upper), colour="black", width=.1)
-  ylim(4, 10)
+#  facet_zoom(ylim = c(5.5, 9.5), zoom.data = ifelse(mean <= 9, NA, FALSE))
+# library(ggforce)
+(E/B) + plot_annotation(tag_levels = 'A')
 ```
-
 
 ### Within-group comparisons over time, adjusted for age & sex
 
 #### Chronic health conditions over time
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 chronic <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, hoinc, chronic_dummy, wave) %>%
+  dplyr::select(distress_sum, sex, age_yrs, hoinc, chronic_dummy, any_m_health, wave) %>%
   filter(chronic_dummy == 1)%>%
   mutate(wave = factor(wave, ordered = TRUE))
 
@@ -246,14 +284,15 @@ chronic <- leger %>%
 levene_test(chronic, distress_sum ~ wave)
 
 # ANCOVA
-m1 = aov(distress_sum ~ wave + sex + age_yrs, data = chronic)
+m1 = aov(distress_sum ~ wave + sex + age_yrs + any_m_health, data = chronic)
 
 Anova(m1, type="III")
 
 # To get adjusted or marginal means
-m1_adjusted <- effect("wave", m1, se=TRUE)
-summary(m1_adjusted)
-m1_adjusted$se
+# m1_adjusted <- effect("wave", m1, se=TRUE)
+# m1_adjusted$se
+# summary(m1_adjusted)
+
 
 # m1_posthoc <- glht(m1, linfct = mcp(wave = "Tukey"))
 # summary(m1_posthoc)
@@ -262,7 +301,7 @@ m1_adjusted$se
 #### Healthy over time
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 healthy <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, hoinc, chronic_dummy, wave) %>%
+  dplyr::select(distress_sum, sex, age_yrs, hoinc, chronic_dummy, any_m_health, wave) %>%
   filter(chronic_dummy == 0)%>%
   mutate(wave = factor(wave, ordered = TRUE))
 
@@ -270,7 +309,7 @@ healthy <- leger %>%
 levene_test(healthy, distress_sum ~ wave)
 
 # ANCOVA
-m2 = aov(distress_sum ~ wave + sex + age_yrs, data = healthy)
+m2 = aov(distress_sum ~ wave + sex + age_yrs + any_m_health, data = healthy)
 
 Anova(m2, type="III")
 
@@ -278,182 +317,108 @@ m2_posthoc <- glht(m2, linfct = mcp(wave = "Tukey"))
 summary(m2_posthoc)
 
 # To get adjusted or marginal means
-m2_adjusted <- effect("wave", m2, se=TRUE)
-m2_adjusted$se
+# m2_adjusted <- effect("wave", m2, se=TRUE)
+# m2_adjusted$se
+# 
+# summary(m2_adjusted)
 
-summary(m2_adjusted)
+# Calculate effect sizes
+# 
+# summary.lm(m2)
+# 
+# t <- c(-0.417, -7.348, 0.919, 0.766, 1.682, -13.287, -10.7049, 15.372)
+# df <- 4380
+# 
+# sqrt((t^2)/(t^2+df))
 
 ```
-
-Discussion - covariates?
 
 ### DISTRESS WOMEN with chronic health v. no chronic health at each survey wave -->
 
-In short - significant differences occur at waves: 2,3,4,6,7
+In short - significant differences occur at waves: 2,4,6*not quite,7
+
+Calculate effect sizes for chronic at each sig time point
+```{r}
+# Calculate effect sizes
+# 
+# summary.lm(w7_m1)
+# 
+t2 <- c(3.190)
+df2 <- 1066
+t4 <- c(1.781)
+df4 <- 1003
+t6 <- c(2.435)
+df6<- 931
+t7 <- c(7.227)
+df7<-922
+
+# 
+sqrt((t2^2)/(t2^2+df2))
+sqrt((t4^2)/(t4^2+df4))
+sqrt((t6^2)/(t6^2+df6))
+sqrt((t7^2)/(t7^2+df7))
+
+```
 
 #### wave 2
 ```{r echo=FALSE}
-w2_female <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
-  filter(sex == "Female") %>%
+w2 <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
   filter(wave == 2)
   
-# ANCOVA
-w2_m1 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w2_female)
+w2_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w2)
 
 Anova(w2_m1, type="III")
-
-#wilcox.test(w2_female$distress_sum ~ w2_female$chronic_dummy)
 ```
 #### wave 3
 ```{r echo=FALSE}
-w3_female <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
-  filter(sex == "Female") %>%
+w3 <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
   filter(wave == 3)
 
-# ANCOVA
-w3_m1 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w3_female)
+w3_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w3)
 
 Anova(w3_m1, type="III")
-
-#wilcox.test(w3_female$distress_sum ~ w3_female$chronic_dummy)
 ```
 #### wave 4
 ```{r echo=FALSE}
-w4_female <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
-  filter(sex == "Female") %>%
+w4 <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
   filter(wave == 4)
 
-# ANCOVA
-w4_m1 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w4_female)
+w4_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w4)
 
 Anova(w4_m1, type="III")
-
-# wilcox.test(w4_female$distress_sum ~ w4_female$chronic_dummy)
 ```
 #### wave 5
 ```{r echo=FALSE}
-w5_female <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
-  filter(sex == "Female") %>%
+w5 <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
   filter(wave == 5)
 
-# ANCOVA
-w5_m1 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w5_female)
+w5_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w5)
 
 Anova(w5_m1, type="III")  
-# wilcox.test(w5_female$distress_sum ~ w5_female$chronic_dummy)
 ```
 #### wave 6
 ```{r echo=FALSE}
-w6_female <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
-  filter(sex == "Female") %>%
+w6 <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
   filter(wave == 6)
 
-# ANCOVA
-w6_m1 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w6_female)
+w6_m1 = aov(distress_sum ~ chronic_dummy + age_yrs +any_m_health, data = w6)
 
 Anova(w6_m1, type="III")   
-# wilcox.test(w6_female$distress_sum ~ w6_female$chronic_dummy)
 ```
 #### wave 7
 ```{r echo=FALSE}
-w7_female <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
-  filter(sex == "Female") %>%
+w7 <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
   filter(wave == 7)
 
-# ANCOVA
-w7_m1 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w7_female)
+w7_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w7)
 
 Anova(w7_m1, type="III")  
-# wilcox.test(w7_female$distress_sum ~ w7_female$chronic_dummy)
-```
-
-### DISTRESS MEN with chronic health v. no chronic health at each survey wave -->
-
-In short - significant differences occur at wave 2,5,6,7
-
-#### wave 2
-```{r echo=FALSE}
-w2_male <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
-  filter(sex == "Male") %>%
-  filter(wave == 2)
-
-# ANCOVA
-w2_m2 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w2_male)
-
-Anova(w2_m2, type="III")
-# wilcox.test(w2_male$distress_sum ~ w2_male$chronic_dummy)
-```
-#### wave 3
-```{r echo=FALSE}
-w3_male <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
-  filter(sex == "Male") %>%
-  filter(wave == 3)
-  
-# ANCOVA
-w3_m2 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w3_male)
-
-Anova(w3_m2, type="III")
-# wilcox.test(w3_male$distress_sum ~ w3_male$chronic_dummy)
-```
-#### wave 4
-```{r echo=FALSE}
-w4_male <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
-  filter(sex == "Male") %>%
-  filter(wave == 4)
-
-# ANCOVA
-w4_m2 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w4_male)
-
-Anova(w4_m2, type="III")  
-# wilcox.test(w4_male$distress_sum ~ w4_male$chronic_dummy)
-```
-#### wave 5
-```{r echo=FALSE}
-w5_male <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
-  filter(sex == "Male") %>%
-  filter(wave == 5)
-  
-# ANCOVA
-w5_m2 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w5_male)
-
-Anova(w5_m2, type="III")
-# wilcox.test(w5_male$distress_sum ~ w5_male$chronic_dummy)
-```
-#### wave 6
-```{r echo=FALSE}
-w6_male <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
-  filter(sex == "Male") %>%
-  filter(wave == 6)
-  
-# ANCOVA
-w6_m2 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w6_male)
-
-Anova(w6_m2, type="III")
-# wilcox.test(w6_male$distress_sum ~ w6_male$chronic_dummy)
-```
-#### wave 7
-```{r echo=FALSE}
-w7_male <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, chronic_dummy, wave) %>%
-  filter(sex == "Male") %>%
-  filter(wave == 7)
-
-# ANCOVA
-w7_m2 = aov(distress_sum ~ chronic_dummy + age_yrs, data = w7_male)
-
-Anova(w7_m2, type="III")  
-# wilcox.test(w7_male$distress_sum ~ w7_male$chronic_dummy)
 ```
 
 ## DISCUSSION

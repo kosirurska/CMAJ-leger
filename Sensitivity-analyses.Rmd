@@ -1,0 +1,73 @@
+---
+title: "SENSITIVITY ANALYSES: Compare the samples across waves"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load the libraries
+library(tidyverse)
+library(readr)
+library(here)
+library(kableExtra)
+library(scales)
+library(haven)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(table1)
+library(sjstats)
+library(tableone)
+```
+
+TABLE 1: Entire sample divided by 
+```{r data, echo=FALSE, message=FALSE, warning=FALSE}
+# Read in the clean csv file
+leger <- read_csv("data/cmaj_analyses.csv")
+
+leger_chronic <- leger %>%
+  filter(chronic_dummy == 1)
+
+leger_healthy <- leger %>%
+  filter(chronic_dummy == 0)
+```
+
+## TABLE comparing chronic health conditions across time
+
+This table would be included to the one above to provide the bivariate comparison
+```{r echo = FALSE}
+## Create a table
+# First create a variable list you want in the table
+
+var_list <- c("age_yrs", "sex", "edu", "province_full", "chronic_descriptive", 
+              "chronic_multi", "any_m_health", "hoinc")
+
+# Determine which variables are categorical
+cat_vars <- c("sex", "edu", "province_full", "chronic_descriptive", 
+              "chronic_multi", "any_m_health", "hoinc", "wave")
+
+#All cases table
+table_1 <- CreateTableOne(vars = var_list, 
+                          factorVars = cat_vars,
+                          data = leger_chronic,
+                          strata = c("wave"))
+
+table_1
+```
+
+## TABLE comparing healthy across time
+
+This table would be included to the one above to provide the bivariate comparison
+```{r echo = FALSE}
+## Create a table
+table_2 <- CreateTableOne(vars = var_list, 
+                          factorVars = cat_vars,
+                          data = leger_healthy,
+                          strata = c("wave"))
+
+table_2
+```
+
+
+
+
