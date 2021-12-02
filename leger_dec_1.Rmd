@@ -200,10 +200,36 @@ B<-covid_cases %>%
         panel.grid.minor.x = element_blank()) +
   scale_x_date(date_labels = "%b %d", date_breaks = "1 month") +
   labs(x = "Time", y = "Number of COVID-19 cases")
+
+library(ggstatsplot)
+ggbetweenstats(
+  data = leger,
+  x = wave,
+  y = distress_sum
+) +
+  facet_grid(~chronic_dummy)
+
+# create a dataset
+data <- data.frame(
+  name=c( rep("A",500), rep("B",500), rep("B",500), rep("C",20), rep('D', 100)  ),
+  value=c( rnorm(500, 10, 5), rnorm(500, 13, 1), rnorm(500, 18, 1), rnorm(20, 25, 4), rnorm(100, 12, 1) )
+)
+
+data
+
 ```
 
-```{r echo=FALSE, warning=FALSE, fig.width= 12, fig.height=14}
+```{r echo=FALSE, warning=FALSE}
+#fig.width= 12, fig.height=14
 (A/B) + plot_annotation(tag_levels = 'A')
+
+marginal_means <- read_csv("data/marginal_means.csv")
+
+marginal_means %>%
+  ggplot(aes(x = wave, y = mean, color = factor(chronic_dummy))) + 
+  geom_point(size = 2) +
+  geom_errorbar(aes(ymin=lower, ymax=upper), colour="black", width=.1)
+  ylim(4, 10)
 ```
 
 
@@ -225,9 +251,9 @@ m1 = aov(distress_sum ~ wave + sex + age_yrs, data = chronic)
 Anova(m1, type="III")
 
 # To get adjusted or marginal means
-m2_adjusted <- effect("wave", m2, se=TRUE)
-summary(m2_adjusted)
-m2_adjusted$se
+m1_adjusted <- effect("wave", m1, se=TRUE)
+summary(m1_adjusted)
+m1_adjusted$se
 
 # m1_posthoc <- glht(m1, linfct = mcp(wave = "Tukey"))
 # summary(m1_posthoc)
@@ -250,6 +276,12 @@ Anova(m2, type="III")
 
 m2_posthoc <- glht(m2, linfct = mcp(wave = "Tukey"))
 summary(m2_posthoc)
+
+# To get adjusted or marginal means
+m2_adjusted <- effect("wave", m2, se=TRUE)
+m2_adjusted$se
+
+summary(m2_adjusted)
 
 ```
 

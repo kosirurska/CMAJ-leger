@@ -84,4 +84,4 @@ Getting ready to write up the manuscrupt. Need to prepare the figures, I think I
 
 Data for the cases plot was extracted on December 1, 2021 from the [government's website](https://health-infobase.canada.ca/covid-19/epidemiological-summary-covid-19-cases.html?stat=num&measure=active&map=pt#a2).
 
-
+Extracted marginal means and CIs from the models in order to plot the trend of the distress over time.
