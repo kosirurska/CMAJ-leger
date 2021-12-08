@@ -1,5 +1,5 @@
 ---
-title: "CFA: Psychological distress during COVID-19 in Canadian youth with chronic health conditions and health peers"
+title: "CFA: Psychological distress during COVID-19 in Canadian youth with and without chronic health conditions"
 output: html_document
 ---
 
@@ -27,16 +27,55 @@ library(stats)
 
 ```{r data, echo=FALSE, message=FALSE, warning=FALSE}
 # Read in the clean csv file
+
+##table(leger_cfa$q0)
+# q0 = variable for language
+
 leger_cfa <- read_csv("data/cmaj_analyses.csv") %>%
-  filter(wave == 2) %>%
-  select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  filter(wave == 2 | wave == 3) %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  drop_na()
+
+leger_cfa_w4 <- read_csv("data/cmaj_analyses.csv") %>%
+  filter(wave == 4 | wave == 5) %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  drop_na()
+
+## Wave 2 - subdivided for english and french
+leger_cfa_w2_en <- read_csv("data/cmaj_analyses.csv") %>%
+  filter(wave == 2 | wave == 3) %>%
+  filter(q0 == 1) %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  drop_na()
+
+leger_cfa_w2_fr <- read_csv("data/cmaj_analyses.csv") %>%
+  filter(wave == 2 | wave == 3) %>%
+  filter(q0 == 2) %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  drop_na()
+
+## Wave 3 - subdivided for english and french
+leger_cfa_w4_en <- read_csv("data/cmaj_analyses.csv") %>%
+  filter(wave == 4 | wave == 5) %>%
+  filter(q0 == 1) %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  drop_na()
+
+leger_cfa_w4_fr <- read_csv("data/cmaj_analyses.csv") %>%
+  filter(wave == 4 | wave == 5) %>%
+  filter(q0 == 2) %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
   drop_na()
 ```
 
 #### Aims:
-Perform CFA for the distress scale
 
-### Zero-order polychoric item to item correlations
+Perform Confirmatory Factor Analyses (CFA) for the psychological distress scale.
+In order to examine the reliability of the scale we followed several steps. We examined the factor structure at 2 separate time points (survey round 2 and 3 combined and survey 4&5 combined in order to get a big enough N in each language) along as in English and French. Laslty, we also report Cronbach Alphas.
+
+### STEP 1: Examine item to item correlations
+
+##### Zero-order polychoric item to item correlations for wave 2 and 3
 ```{r echo=FALSE, message = FALSE}
 poly_cors<-polychoric(leger_cfa)
 
@@ -51,13 +90,105 @@ items_polychoric %>%
   kable_styling("hover")
 ```
 
+##### Zero-order polychoric item to item correlations for wave 4 and 5
+```{r echo=FALSE, message = FALSE}
+poly_cors2<-polychoric(leger_cfa_w4)
+
+items_polychoric2 <- poly_cors2$rho
+
+items_polychoric2 <- as.data.frame(round(items_polychoric2, 2)) 
+
+items_polychoric2[upper.tri(items_polychoric2)] <- " "
+
+items_polychoric2 %>%
+  kable(escape = F) %>%
+  kable_styling("hover")
+```
+### STEP 2: Perform CFA 
+
+CFI stands for Comparative Fit Index and RMSEA stands for Root Mean Square Error of Approximation. Both are commonly used fit indices to assess how well the model fits the data. CFI values range from 0 to 1, with values => 0.9 indicating acceptable model fit. RMSEA values between 0.05 and 0.08 indicate acceptable fit (Hu & Bentler, 1999).
+
+#### Wave 2 and 3, English scale (*N* = `r nrow(leger_cfa_w2_en)`)
+
 ```{r echo=FALSE, message=FALSE}
 #one factor three items, default marker method
-m1  <- ' f  =~ impacvd_sq001 + impacvd_sq002 + impacvd_sq003 + impacvd_sq004'
+m1_w2_en  <- ' f  =~ impacvd_sq001 + impacvd_sq002 + impacvd_sq003 + impacvd_sq004'
 
-cfa_m1 <- cfa(m1, data=leger_cfa)
+cfa_m1_w2_en <- cfa(m1_w2_en, data=leger_cfa_w2_en)
 
-summary(cfa_m1, fit.measures=TRUE, standardized=TRUE) 
+summary(cfa_m1_w2_en, fit.measures=TRUE, standardized=TRUE) 
 # modindices(cfa_m1, sort. = TRUE)
 ```
 
+#### Wave 2 abd 3, French scale (*N* = `r nrow(leger_cfa_w2_fr)`)
+
+```{r echo=FALSE, message=FALSE}
+#one factor three items, default marker method
+m1_w2_fr  <- ' f  =~ impacvd_sq001 + impacvd_sq002 + impacvd_sq003 + impacvd_sq004'
+
+cfa_m1_w2_fr <- cfa(m1_w2_fr, data=leger_cfa_w2_fr)
+
+summary(cfa_m1_w2_fr, fit.measures=TRUE, standardized=TRUE) 
+```
+
+#### Wave 4 and 5, English scale (*N* = `r nrow(leger_cfa_w4_en)`)
+
+```{r echo=FALSE, message=FALSE}
+#one factor three items, default marker method
+m1_w3_en  <- ' f  =~ impacvd_sq001 + impacvd_sq002 + impacvd_sq003 + impacvd_sq004'
+
+cfa_m1_w3_en <- cfa(m1_w3_en, data=leger_cfa_w4_en)
+
+summary(cfa_m1_w3_en, fit.measures=TRUE, standardized=TRUE) 
+```
+
+#### Wave 4 and 5, French scale (*N* = `r nrow(leger_cfa_w4_fr)`)
+
+```{r echo=FALSE, message=FALSE}
+#one factor three items, default marker method
+m1_w3_fr  <- ' f  =~ impacvd_sq001 + impacvd_sq002 + impacvd_sq003 + impacvd_sq004'
+
+cfa_m1_w3_fr <- cfa(m1_w3_fr, data=leger_cfa_w4_fr)
+
+summary(cfa_m1_w3_fr, fit.measures=TRUE, standardized=TRUE) 
+```
+
+### STEP 3: Report internal consistency at each time point (Cronbach Alpha)
+```{r echo=FALSE, message = FALSE}
+leger_w2 <- read_csv("data/cmaj_analyses.csv") %>%
+  filter(wave == 2) %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  drop_na()
+leger_w3 <- read_csv("data/cmaj_analyses.csv") %>%
+  filter(wave == 3) %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  drop_na()
+leger_w4 <- read_csv("data/cmaj_analyses.csv") %>%
+  filter(wave == 4) %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  drop_na()
+leger_w5 <- read_csv("data/cmaj_analyses.csv") %>%
+  filter(wave == 5) %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  drop_na()
+leger_w6 <- read_csv("data/cmaj_analyses.csv") %>%
+  filter(wave == 6) %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  drop_na()
+leger_w7 <- read_csv("data/cmaj_analyses.csv") %>%
+  filter(wave == 7) %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, impacvd_sq004) %>%
+  drop_na()
+
+psych::alpha(leger_cfa_w2_en) # 0.88
+psych::alpha(leger_cfa_w2_fr) # 0.84
+psych::alpha(leger_cfa_w4_en) # 0.9
+psych::alpha(leger_cfa_w4_fr) # 0.89
+
+psych::alpha(leger_w2) # 0.88
+psych::alpha(leger_w3) # 0.87
+psych::alpha(leger_w4) # 0.9
+psych::alpha(leger_w5) # 0.9
+psych::alpha(leger_w6) # 0.89
+psych::alpha(leger_w7) # 0.89
+```
