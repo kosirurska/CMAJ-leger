@@ -1,0 +1,137 @@
+---
+title: "CMAJ FIGURE 1: Psychological distress during COVID-19 in Canadian youth with and without chronic health conditions"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load the libraries
+library(tidyverse)
+library(readr)
+library(here)
+library(psych)
+library(english)
+library(stringr)
+library(tableone)
+library(kableExtra)
+library(scales)
+library(ggridges)
+library(plotly)
+library(patchwork)
+library(haven)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(table1)
+library(rstatix)
+library(car)
+library(multcomp)
+library(effects)
+library(pastecs)
+```
+
+```{r data, echo=FALSE, message=FALSE, warning=FALSE}
+# Read in the clean csv file
+leger <- read_csv("data/cmaj_analyses.csv")
+
+# subset for chronic people only
+leger_chronic <- leger %>%
+  filter(chronic_dummy == 1)
+
+# Data for the plot
+marginal_means <- read_csv("data/marginal_means.csv")
+
+marginal_means_2 <- read_csv("data/marginal_means2.csv")
+
+covid_cases <- read_csv("data/covid19-download.csv")
+
+# set seed for all analyses and wrangling
+set.seed(1)
+```
+
+
+```{r echo=FALSE, message = FALSE, warning=FALSE, fig.width= 10, fig.height=11}
+E <- marginal_means_2 %>%
+  mutate(chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("No", "Yes")),
+         wave = as.factor(wave)) %>%
+  ggplot(aes(x = wave, y = mean, color = chronic_dummy)) + 
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin=lower, ymax=upper), colour="black", width=.1) +
+  labs(title = "", x = " ", y = "Marginal mean of psychological distress", color = "Chronic condition") +
+  ylim(4.8, 9) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)
+        #legend.position = c(0.92, 0.89) ## if want to adjust the location of the legend
+        ) +
+  geom_text(label = "Ref.", x = 1, y = 5.4, size = 2.5, show.legend = FALSE) +
+  geom_text(label = "** \np = 0.001", x = 2, y = 5.5, size = 2.5, show.legend = FALSE) +
+  geom_text(label = "*** \np < 0.001", x = 3, y = 5.5, size = 2.5, show.legend = FALSE) +
+  geom_text(label = "*** \np < 0.001", x = 4, y = 5.5, size = 2.5, show.legend = FALSE) +
+    geom_text(label = "** \np = 0.002", x = 1, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
+  geom_text(label = "** \np = 0.001", x = 3, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
+  geom_text(label = ". \np = 0.054", x = 5, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
+  geom_text(label = "** \np = 0.006", x = 6, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
+
+  scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
+                   labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
+                              "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
+
+
+cases <- read_csv("data/covid19-download.csv") %>%
+  filter(prname == "Canada") %>%
+  dplyr::select(date, avgtotal_last7)
+
+combined_oxford <- read_csv("data/combined_oxford.csv")
+
+test <- left_join(combined_oxford, cases, by = "date") %>%
+  filter(date > "2020-06-01") %>% 
+  filter(date < "2021-09-30") %>%
+  rename(c("stingency" = "rating.x", "containment" = "rating.y")) %>%
+  pivot_longer(cols = c(stingency, containment), names_to = "index", values_to = "rating") %>%
+  mutate(group = as.factor(case_when(date > "2020-06-02" & date < "2020-06-13" ~ 1,
+                           date > "2020-10-27" & date < "2020-11-11" ~ 2,
+                           date > "2021-01-26" & date < "2021-02-08" ~ 3,
+                           date > "2021-03-10" & date < "2021-03-24" ~ 4,
+                           date > "2021-05-30" & date < "2021-06-15" ~ 5,
+                           date > "2021-09-09" & date < "2021-09-21" ~ 6)))
+
+coeff <- 130
+
+F1 <- ggplot(test, aes(x=date)) +
+  geom_line(aes(y = avgtotal_last7/coeff), color = "light blue", size = 1) + # Divide by 10 to get the same range than the temperature
+  geom_line(aes(y = rating, color = index), size = 1) +
+  scale_y_continuous(name = "Stingency and containment indices",
+                     sec.axis = sec_axis(~.*coeff, name="7-day avg COVID-19 cases"))+
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "1 month") +
+  geom_ribbon(aes(x = date, group = group, ymax = avgtotal_last7/coeff, ymin = 0), fill = "light blue", alpha = 0.4) +
+  labs(x = "Time", color = "Oxford Index")
+
+### Figure without Oxford Policy Data
+# B1 <- covid_cases %>%
+#   filter(date > "2020-06-01") %>% 
+#   filter(date < "2021-09-30") %>%
+#   filter(prname == "Canada") %>%
+#   mutate(group = as.factor(case_when(date > "2020-06-02" & date < "2020-06-13" ~ 1,
+#                            date > "2020-10-27" & date < "2020-11-11" ~ 2,
+#                            date > "2021-01-26" & date < "2021-02-08" ~ 3,
+#                            date > "2021-03-10" & date < "2021-03-24" ~ 4,
+#                            date > "2021-05-30" & date < "2021-06-15" ~ 5,
+#                            date > "2021-09-09" & date < "2021-09-21" ~ 6))) %>%
+#   ggplot(aes(x = date, y = numtoday, fill = numtoday)) +
+#   geom_line(color = "light blue") +
+#   geom_ribbon(aes(x = date, group = group, ymax = numtoday, ymin = 0), fill = "light blue", alpha = 0.3) +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1),
+#         panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank()) +
+#   scale_x_date(date_labels = "%b %d", date_breaks = "1 month") +
+#   labs(x = "Time", y = "Number of daily COVID-19 cases")
+
+(E/F1) + plot_annotation(tag_levels = 'A')
+```
