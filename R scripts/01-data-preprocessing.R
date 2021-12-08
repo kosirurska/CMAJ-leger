@@ -17,7 +17,7 @@ leger_raw <- rowid_to_column(leger_raw)
 cmaj_analysis <- leger_raw %>%
   filter(wave %in% c(2:7)) %>%
   filter(age_yrs < 40) %>%
-  select(rowid, date_part,
+  dplyr::select(rowid, q0, date_part,
          prov, sex, age_yrs, recimp, medins, edu, hoinc, reven, area, # demographic factors
          emplstat_sq001:emplstat_sq008,
          impacvd_sq001:impacvd_sq004,impacvd_sq006, impacvd_sq020, # impacts
