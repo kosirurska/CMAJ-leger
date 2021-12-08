@@ -1,0 +1,234 @@
+---
+title: "CMAJ Analytical and results script: Psychological distress during COVID-19 in Canadian youth with and without chronic health conditions"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load the libraries
+library(tidyverse)
+library(readr)
+library(here)
+library(psych)
+library(english)
+library(stringr)
+library(tableone)
+library(kableExtra)
+library(scales)
+library(ggridges)
+library(plotly)
+library(patchwork)
+library(haven)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(table1)
+library(rstatix)
+library(car)
+library(multcomp)
+library(effects)
+library(pastecs)
+```
+
+```{r data, echo=FALSE, message=FALSE, warning=FALSE}
+# Read in the clean csv file
+leger <- read_csv("data/cmaj_analyses.csv")
+
+# subset for chronic people only
+leger_chronic <- leger %>%
+  filter(chronic_dummy == 1)
+
+# Data for the plot
+marginal_means <- read_csv("data/marginal_means.csv")
+
+marginal_means_2 <- read_csv("data/marginal_means2.csv")
+
+covid_cases <- read_csv("data/covid19-download.csv")
+
+# set seed for all analyses and wrangling
+set.seed(1)
+```
+
+#### Aims:
+Using Canadian samples of young adults, we aimed to investigate if there exist differences in levels of psychological distress in YAs with physical chronic health conditions, and healthy individuals. In particular we wanted to examine any significant fluctuations in psychological distress (feelings of anxiety, depression, loneliness, irritability) among young people with different medical needs over the course of the pandemic.
+
+## METHOD
+
+The present study is part of a larger International COVID‐19 Awareness and Responses Evaluation (iCARE) study, which is a global multi‐phase research survey conducted through the Montreal Behavioural Medicine Centre. Find more about the study and materials at [www.iCAREstudy.com](www.iCAREstudy.com). 
+
+## RESULTS
+### Sample
+
+```{r echo=FALSE, warning=FALSE}
+table_data <- leger %>%
+  dplyr::select(age_yrs, sex, edu, hoinc, province_full, chronic_descriptive, chronic_dummy, chronic_multi, any_m_health, distress_sum, vaccine, booster_dummy) %>%
+  mutate(chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("Healthy", "Chronic Health Condition")),
+         chronic_multi = factor(chronic_multi, 
+                                levels = c(0:1),
+                                labels = c("No", "Yes")),
+         any_m_health = factor(any_m_health,
+                               levels = c(0:1),
+                               labels = c("No", "Yes")))
+
+label(table_data$sex) <- "Sex"
+label(table_data$age_yrs) <- "Age"
+label(table_data$edu) <- "Education"
+label(table_data$province_full) <- "Province"
+label(table_data$hoinc) <- "Income"
+label(table_data$chronic_descriptive) <- "Chronic illness"
+label(table_data$chronic_multi) <- "Multimorbidity"
+label(table_data$any_m_health) <- "Diagnosis of mental health disorder"
+label(table_data$distress_sum) <- "COVID-19 distress"
+label(table_data$vaccine) <- "Received COVID-19 vaccine?"
+label(table_data$booster_dummy) <- "Likelihood of taking COVID-19 booster dose?"
+
+units(table_data$age_yrs) <- "years"
+
+table1(~ age_yrs + sex + edu + hoinc + province_full + chronic_descriptive + chronic_multi + any_m_health + distress_sum + vaccine + booster_dummy | chronic_dummy,
+       data = table_data)
+
+```
+
+## Within-group comparisons over time, adjusted for age & sex & mental health diagnosis (anxiety or depression)
+
+#### Chronic health conditions over time
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+chronic <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, hoinc, chronic_dummy, any_m_health, wave) %>%
+  filter(chronic_dummy == 1)%>%
+  mutate(wave = factor(wave, ordered = TRUE))
+
+# Levene's test for homogeneity of variance
+# levene_test(chronic, distress_sum ~ wave)
+##     df1   df2 statistic      p
+##   <int> <int>     <dbl>  <dbl>
+## 1     5  1448      2.17 0.0553
+
+# ANCOVA
+m1 = aov(distress_sum ~ wave + sex + age_yrs + any_m_health, data = chronic)
+
+Anova(m1, type="III")
+
+# To get adjusted or marginal means
+# m1_adjusted <- effect("wave", m1, se=TRUE)
+# m1_adjusted$se
+# summary(m1_adjusted)
+```
+
+Effect sizes in order for sex, age, mental health
+```{r echo=FALSE, warning=FALSE}
+# Calculate effect sizes
+# 
+#summary.lm(m1)
+# # sex, age, mental health
+t_m1 <- c(-7.938, -2.517, 10.138)
+df_m1 <- 1438
+
+sqrt((t_m1^2)/(t_m1^2+df_m1))
+```
+
+
+#### No chronic health conditions over time
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+healthy <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, hoinc, chronic_dummy, any_m_health, wave) %>%
+  filter(chronic_dummy == 0)%>%
+  mutate(wave = factor(wave, ordered = TRUE))
+
+# Leven's test
+#levene_test(healthy, distress_sum ~ wave)
+##     df1   df2 statistic      p
+##   <int> <int>     <dbl>  <dbl>
+## 1     5  4399      2.12 0.0605
+
+# ANCOVA
+m2 = aov(distress_sum ~ wave + sex + age_yrs + any_m_health, data = healthy)
+
+Anova(m2, type="III")
+
+m2_posthoc <- glht(m2, linfct = mcp(wave = "Tukey"))
+summary(m2_posthoc)
+
+# To get adjusted or marginal means
+# m2_adjusted <- effect("wave", m2, se=TRUE)
+# m2_adjusted$se
+# 
+# summary(m2_adjusted)
+```
+
+Effect sizes in order for sex, age, mental health
+```{r echo=FALSE, warning=FALSE}
+# Calculate effect sizes
+
+# summary.lm(m2)
+# # sex, age, mental health, overall model
+t_m2 <- c(-10.704, -8.867, 15.372, 34.575)
+df_m2 <- 4380
+
+sqrt((t_m2^2)/(t_m2^2+df_m2))
+```
+
+### DISTRESS between chronic health condition v. no chronic health at each survey wave -->
+
+#### Wave 2
+```{r echo=FALSE}
+w2 <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
+  filter(wave == 2)
+  
+w2_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w2)
+
+Anova(w2_m1, type="III")
+```
+#### Wave 3
+```{r echo=FALSE}
+w3 <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
+  filter(wave == 3)
+
+w3_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w3)
+
+Anova(w3_m1, type="III")
+```
+#### Wave 4
+```{r echo=FALSE}
+w4 <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
+  filter(wave == 4)
+
+w4_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w4)
+
+Anova(w4_m1, type="III")
+```
+#### Wave 5
+```{r echo=FALSE}
+w5 <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
+  filter(wave == 5)
+
+w5_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w5)
+
+Anova(w5_m1, type="III")  
+```
+#### Wave 6
+```{r echo=FALSE}
+w6 <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
+  filter(wave == 6)
+
+w6_m1 = aov(distress_sum ~ chronic_dummy + age_yrs +any_m_health, data = w6)
+
+Anova(w6_m1, type="III")   
+```
+#### Wave 7
+```{r echo=FALSE}
+w7 <- leger %>%
+  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
+  filter(wave == 7)
+
+w7_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w7)
+
+Anova(w7_m1, type="III")  
+```
