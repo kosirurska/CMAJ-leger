@@ -1,6 +1,6 @@
 ---
-title: "CMAJ FIGURE 1: Psychological distress during COVID-19 in Canadian youth with and without chronic health conditions"
-output: html_document
+title: "FIGURE 1: COVID-19 related psychological distress across the pandemic timeline in Canada"
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -69,13 +69,13 @@ E <- marginal_means_2 %>%
   geom_text(label = "** \np = 0.001", x = 2, y = 5.5, size = 2.5, show.legend = FALSE) +
   geom_text(label = "*** \np < 0.001", x = 3, y = 5.5, size = 2.5, show.legend = FALSE) +
   geom_text(label = "*** \np < 0.001", x = 4, y = 5.5, size = 2.5, show.legend = FALSE) +
-    geom_text(label = "** \np = 0.002", x = 1, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
-  geom_text(label = "** \np = 0.001", x = 3, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
-  geom_text(label = ". \np = 0.054", x = 5, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
-  geom_text(label = "** \np = 0.006", x = 6, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
+    geom_text(label = "** \np = 0.001", x = 1, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
+  #geom_text(label = "** \np = 0.001", x = 3, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
+  geom_text(label = "** \np = 0.01", x = 5, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
+  geom_text(label = "*** \np < 0.001", x = 6, y = 8.8, size = 2.5, show.legend = FALSE, color = "black") +
 
   scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
-                   labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
+                   labels = c("Early June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
                               "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
 
 
@@ -88,8 +88,8 @@ combined_oxford <- read_csv("data/combined_oxford.csv")
 test <- left_join(combined_oxford, cases, by = "date") %>%
   filter(date > "2020-06-01") %>% 
   filter(date < "2021-09-30") %>%
-  rename(c("stingency" = "rating.x", "containment" = "rating.y")) %>%
-  pivot_longer(cols = c(stingency, containment), names_to = "index", values_to = "rating") %>%
+  rename(c("Stringency" = "rating.x", "Containment" = "rating.y")) %>%
+  pivot_longer(cols = c(Stringency, Containment), names_to = "index", values_to = "rating") %>%
   mutate(group = as.factor(case_when(date > "2020-06-02" & date < "2020-06-13" ~ 1,
                            date > "2020-10-27" & date < "2020-11-11" ~ 2,
                            date > "2021-01-26" & date < "2021-02-08" ~ 3,
@@ -102,7 +102,7 @@ coeff <- 130
 F1 <- ggplot(test, aes(x=date)) +
   geom_line(aes(y = avgtotal_last7/coeff), color = "light blue", size = 1) + # Divide by 10 to get the same range than the temperature
   geom_line(aes(y = rating, color = index), size = 1) +
-  scale_y_continuous(name = "Stingency and containment indices",
+  scale_y_continuous(name = "Stringency and containment indices",
                      sec.axis = sec_axis(~.*coeff, name="7-day avg COVID-19 cases"))+
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
@@ -135,3 +135,10 @@ F1 <- ggplot(test, aes(x=date)) +
 
 (E/F1) + plot_annotation(tag_levels = 'A')
 ```
+
+\newpage
+
+**Figure 1: COVID-19 related psychological distress across the pandemic timeline in Canada**
+
+Panel A shows the marginal means with whiskers representing 95% CIs at each survey round for the 2 groups of young adults. X-axis shows the sum score of psychological distress, which has been abridged to show the differences between the groups more clearly. The black p-values depicted above the dot and whiskers represent significant differences between the 2 groups. The red annotations represent the results of Tukey post hoc tests, with survey round 2 (early June) being the reference point. For YAs with no chronic health condition, the psychological distress increased significantly at rounds 3, 4, and 5. The bottom panel, B, provide epidemiological and health policy context. The plot depicts a 7-day average number of COVID-19 cases in Canada between June 2020 and October 2021. The darker bands demonstrate the dates between the data in this study was collected. Above, the 2 lines represent Stringency and Containment and Health indices from OxCGRT. Higher values represent more strict measures, which are shown to coincide with the COVID-19 waves in Canada.
+
