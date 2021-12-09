@@ -96,4 +96,4 @@ Wrote introduction and 90% of the method section. Re-ran the scripts and separat
 
 **Thursday, Dec 9, 2021**
 
-Wrote up the method and results. Added a few more effect size calculations to the analytical script .rmd. Fixed a few bugs in the Figure script/processing.
+Wrote up the method and results and drafted discussion. Added a few more effect size calculations to the analytical script .rmd. Fixed a few bugs in the Figure script/processing. Cleaned up the repo so that it will be ready for submission/pre-print.
