@@ -2,7 +2,7 @@
 title: "Project log"
 author: "Prepared by UK"
 date: "First opened: 2021-11-17 | Last update: `r Sys.Date()`"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -93,3 +93,7 @@ Extracted marginal means and CIs from the models in order to plot the trend of t
 **Wednesday, Dec 8, 2021**
 
 Wrote introduction and 90% of the method section. Re-ran the scripts and separated them, started organizing for publication.
+
+**Thursday, Dec 9, 2021**
+
+Wrote up the method and results. Added a few more effect size calculations to the analytical script .rmd. Fixed a few bugs in the Figure script/processing.

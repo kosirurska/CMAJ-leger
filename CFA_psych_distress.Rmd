@@ -1,6 +1,6 @@
 ---
 title: "CFA: Psychological distress during COVID-19 in Canadian youth with and without chronic health conditions"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -71,7 +71,23 @@ leger_cfa_w4_fr <- read_csv("data/cmaj_analyses.csv") %>%
 #### Aims:
 
 Perform Confirmatory Factor Analyses (CFA) for the psychological distress scale.
-In order to examine the reliability of the scale we followed several steps. We examined the factor structure at 2 separate time points (survey round 2 and 3 combined and survey 4&5 combined in order to get a big enough N in each language) along as in English and French. Laslty, we also report Cronbach Alphas.
+In order to examine the reliability of the scale we followed several steps. We examined the factor structure at 2 separate time points (survey round 2 and 3 combined and survey 4&5 combined in order to get a big enough N in each language) along as in English and French. Lastly, we also report Cronbach Alphas.
+
+NB: Survey round equals to survey wave, Leger is the name of the entire dataset and we label waves as wX
+
+**Variable names and description**:
+
+Because of COVID-19...
+
+**impacvd_sq001**	[...I have felt nervous, anxious, or worried]
+
+**impacvd_sq002**	[...I have felt sad, depressed, or hopeless] 
+
+**impacvd_sq003**	[...I have felt lonely and isolated]
+
+**impacvd_sq004**	[...I have felt irritable, frustrated or angry]
+
+The complete list of measures including detailed protocol description, along with the data dictionaries can be found [here](https://osf.io/v8xk5/).
 
 ### STEP 1: Examine item to item correlations
 
@@ -81,13 +97,13 @@ poly_cors<-polychoric(leger_cfa)
 
 items_polychoric <- poly_cors$rho
 
-items_polychoric <- as.data.frame(round(items_polychoric, 2)) 
+items_polychoric <- as.data.frame(round(items_polychoric, 2))
 
 items_polychoric[upper.tri(items_polychoric)] <- " "
 
-items_polychoric %>%
-  kable(escape = F) %>%
-  kable_styling("hover")
+items_polychoric
+  #%>% kable(escape = FALSE) %>% # if rendering html this is more pleasant to look at + interactive :)
+#   kable_styling("hover")
 ```
 
 ##### Zero-order polychoric item to item correlations for wave 4 and 5
@@ -96,17 +112,18 @@ poly_cors2<-polychoric(leger_cfa_w4)
 
 items_polychoric2 <- poly_cors2$rho
 
-items_polychoric2 <- as.data.frame(round(items_polychoric2, 2)) 
+items_polychoric2 <- as.data.frame(round(items_polychoric2, 2))
 
 items_polychoric2[upper.tri(items_polychoric2)] <- " "
 
-items_polychoric2 %>%
-  kable(escape = F) %>%
-  kable_styling("hover")
+items_polychoric2
+# %>%
+#   kable(escape = F) %>%
+#   kable_styling("hover")
 ```
 ### STEP 2: Perform CFA 
 
-CFI stands for Comparative Fit Index and RMSEA stands for Root Mean Square Error of Approximation. Both are commonly used fit indices to assess how well the model fits the data. CFI values range from 0 to 1, with values => 0.9 indicating acceptable model fit. RMSEA values between 0.05 and 0.08 indicate acceptable fit (Hu & Bentler, 1999).
+CFI stands for Comparative Fit Index, TLI for Tucker-Lewis Index, and RMSEA stands for Root Mean Square Error of Approximation. All are commonly used relative goodness-of-fit indices to assess how well the model fits the data. CFI and TLI values range from 0 to 1, with values => 0.9 indicating acceptable model fit. RMSEA values between 0.05 and 0.08 indicate acceptable fit (Hu & Bentler, 1999).
 
 #### Wave 2 and 3, English scale (*N* = `r nrow(leger_cfa_w2_en)`)
 
