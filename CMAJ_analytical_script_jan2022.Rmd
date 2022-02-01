@@ -5,7 +5,6 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-# Load the libraries
 library(tidyverse)
 library(readr)
 library(here)
@@ -29,51 +28,14 @@ library(multcomp)
 library(effects)
 library(pastecs)
 library(rcompanion)
-
-if(!require(psych)){install.packages("car")}
-if(!require(MASS)){install.packages("MASS")}
-if(!require(rcompanion)){install.packages("rcompanion")}
-
 ```
 
 ```{r data, echo=FALSE, message=FALSE, warning=FALSE}
 # Read in the clean csv file
 leger <- read_csv("data/cmaj_analyses_jan2022.csv")
 
-# subset for chronic people only
-leger_chronic <- leger %>%
-  filter(chronic_dummy == 1)
-
 # set seed for all analyses and wrangling
 set.seed(1)
-```
-
-## Normality
-```{r}
-leger %>%
-  group_by(wave, chronic_dummy) %>%
-  shapiro_test(distress_sum)
-
-# 
-# leger_chronic <- leger_chronic %>%
-#   mutate(log_dis = -log(distress_sum+1),
-#          cub_dis = sign(distress_sum) * abs(distress_sum)^(1/3))
-
-leger$distress_reverse = -leger$distress_sum+13
-
-leger <- leger %>%
-  dplyr::mutate(cub_dis = sign(distress_reverse) * abs(distress_reverse)^(1/3))
-
-
-# leger <- leger %>%
-#   mutate(log_dis = -log(distress_reverse))
-# # 
-# plotNormalHistogram(leger$distress_reverse)
-# plotNormalHistogram(f_test$distress_sum)
-plotNormalHistogram(leger$cub_dis)
-
-shapiro_test(leger_chronic$impacvd_sq001)
-
 ```
 
 ## RESULTS
@@ -110,32 +72,8 @@ table1(~ age_yrs + sex + edu + hoinc + province_full + chronic_descriptive + chr
 
 ```
 
-## VISUAL EXPLORATION
-```{r echo=FALSE, warning=FALSE, fig.width= 12, fig.height=6}
-leger %>%
-  dplyr::select(chronic_dummy, wave, distress_sum, sex) %>%
-  filter(sex %in% c("Female", "Male")) %>%
-  mutate(chronic_dummy = factor(chronic_dummy,
-                                levels = c(0:1),
-                                labels = c("No", "Yes")),
-         wave = as.factor(wave)) %>%
-  ggplot(aes(x = wave)) +
-  geom_boxplot(aes(y = distress_sum, fill=chronic_dummy)) +
-  #facet_wrap(~chronic_dummy) +
-  labs(title = " ", x = "Survey round", y = "Level of psychological distress", fill = "Chronic condition") +
-  #facet_grid(~sex) +
-  ylim(0, 13) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7, 8),
-                     labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
-                                "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)", "Late Nov. \n2021 \n(8)"))
-```
-
-## Normality assumption
-
-Skewed data
-```{r echo=FALSE ,fig.width=12}
+# FIGURE
+```{r echo=FALSE, fig.width=13, fig.height=16}
 leger %>%
   group_by(wave, chronic_dummy) %>%
   shapiro_test(distress_sum)
@@ -149,9 +87,8 @@ label_wave <- c("2" = "Round 2",
                 "7" = "Round 7",
                 "8" = "Round 8")
 
-leger %>%
+A <- leger %>%
   dplyr::select(wave, chronic_dummy, impacvd_sq001) %>%
-  #filter(wave == 8) %>%
   group_by(wave, chronic_dummy, impacvd_sq001) %>%
   drop_na() %>%
   count() %>%
@@ -159,20 +96,19 @@ leger %>%
   mutate(sum = sum(n),
          prop = n/sum*100) %>%
   ggplot(aes(x = impacvd_sq001, y = prop)) +
-  geom_col(aes(fill = impacvd_sq001)) +
-  facet_grid(chronic_dummy ~ wave, 
-             labeller = labeller(chronic_dummy = label,
-                                 wave = label_wave)) +
+  geom_col(aes(fill = factor(chronic_dummy)),
+               position = 'dodge') +
+  facet_grid(~ wave,
+             labeller = labeller(wave = label_wave)) +
   theme_bw() +
-  scale_fill_viridis_c(begin = 0.8, end = 0.3) +
+  scale_fill_discrete(breaks = c(0, 1),
+                     labels = c("No", "Yes")) +
   scale_x_continuous(breaks = c(0, 1, 2, 3),
-                       labels = c("None", "Little", "Some", "Lots")) +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "COVID-19 anxiety", x = "Response", y = "Prooportion (%)")
-  
-##
-leger %>%
+                     labels = c("None", "Little", "Some", "Great extent")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "COVID-19 anxiety", x = "Response", y = "Prooportion (%)", fill = "Chronic condition")
+ 
+B <- leger %>%
   dplyr::select(wave, chronic_dummy, impacvd_sq002) %>%
   group_by(wave, chronic_dummy, impacvd_sq002) %>%
   drop_na() %>%
@@ -181,20 +117,19 @@ leger %>%
   mutate(sum = sum(n),
          prop = n/sum*100) %>%
   ggplot(aes(x = impacvd_sq002, y = prop)) +
-  geom_col(aes(fill = impacvd_sq002)) +
-  facet_grid(chronic_dummy ~ wave,
-             labeller = labeller(chronic_dummy = label,
-                                 wave = label_wave)) +
+  geom_col(aes(fill = factor(chronic_dummy)),
+               position = 'dodge') +
+  facet_grid(~ wave,
+             labeller = labeller(wave = label_wave)) +
   theme_bw() +
-  scale_fill_viridis_c(begin = 0.8, end = 0.3) +
+  scale_fill_discrete(breaks = c(0, 1),
+                     labels = c("No", "Yes")) +
   scale_x_continuous(breaks = c(0, 1, 2, 3),
-                       labels = c("None", "Little", "Some", "Lots")) +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "COVID-19 depression", x = "Response", y = "Prooportion (%)")
-  
-##
-leger %>%
+                       labels = c("None", "Little", "Some", "Great extent")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "COVID-19 depression", x = "Response", y = "Prooportion (%)", fill = "Chronic condition")
+
+C <- leger %>%
   dplyr::select(wave, chronic_dummy, impacvd_sq003) %>%
   group_by(wave, chronic_dummy, impacvd_sq003) %>%
   drop_na() %>%
@@ -202,203 +137,388 @@ leger %>%
   ungroup(impacvd_sq003) %>%
   mutate(sum = sum(n),
          prop = n/sum*100) %>%
-  ggplot(aes(x = impacvd_sq003, y = prop, group = factor(chronic_dummy))) +
+  ggplot(aes(x = impacvd_sq003, y = prop)) +
   geom_col(aes(fill = factor(chronic_dummy)),
-           position='dodge') +
+               position = 'dodge') +
   facet_grid(~ wave,
              labeller = labeller(wave = label_wave)) +
   theme_bw() +
-  scale_fill_viridis_d(begin = 0.8, end = 0.3) +
+  scale_fill_discrete(breaks = c(0, 1),
+                     labels = c("No", "Yes")) +
   scale_x_continuous(breaks = c(0, 1, 2, 3),
-                      labels = c("None", "Little", "Some", "Lots")) +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "COVID-19 loneliness", x = "Response", y = "Prooportion (%)")
+                       labels = c("None", "Little", "Some", "Great extent")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "COVID-19 loneliness", x = "Response", y = "Prooportion (%)", fill = "Chronic condition")
+ 
+
+
+A/B/C + plot_annotation(tag_levels = "A") +
+  plot_layout(guides = 'collect')
 ```
 
 ## Within-group comparisons over time, adjusted for age & sex & mental health diagnosis (anxiety or depression)
 
-#### Chronic health conditions over time
-```{r echo=T, warning=FALSE, message=FALSE}
-chronic <- leger %>%
-  dplyr::select(distress_sum, cub_dis, sex, age_yrs, hoinc, chronic_dummy, any_m_health, wave) %>%
-  # filter(chronic_dummy == 1) %>%
-  # filter(sex == "Female") %>%
-  # filter(wave != 8) %>%
-  mutate(wave = factor(wave, ordered = TRUE))
-
-# Levene's test for homogeneity of variance
-levene_test(chronic, cub_dis ~ wave)
-##     df1   df2 statistic      p
-##   <int> <int>     <dbl>  <dbl>
-## 6	1680	1.743072	0.1073626	
-
-# ANCOVA
-m1 = aov(distress_sum ~ wave + sex + age_yrs + any_m_health, data = chronic)
-
-Anova(m1, type="III")
-
-# To get adjusted or marginal means
-m1_adjusted <- effect("wave", m1, se=TRUE)
-m1_adjusted$se
-summary(m1_adjusted)
-# format(2.714e-14, scientific = F, digits = 3)
-
-```
-
-Effect sizes and contrasts for sex, age, mental health
-```{r echo=FALSE, warning=FALSE}
-# Calculate effect sizes
-
-#summary.lm(m1)
-# # sex, age, mental health
-t_m1 <- c(-7.938, -2.517, 10.138)
-df_m1 <- 1438
-
-sqrt((t_m1^2)/(t_m1^2+df_m1)) # <- these are contrasts
-
-# Age - partial eta^2 for the effect of age
-61.2/(61.2+13890.6)
-```
-
-
-#### No chronic health conditions over time
-```{r echo=FALSE, warning=FALSE, message=FALSE}
-healthy <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, hoinc, chronic_dummy, any_m_health, wave) %>%
-  filter(chronic_dummy == 0)%>%
-  mutate(wave = factor(wave, ordered = TRUE))
-
-# Leven's test
-levene_test(healthy, distress_sum ~ wave)
-##     df1   df2 statistic      p
-##   <int> <int>     <dbl>  <dbl>
-## 1     5  4399      2.12 0.0605
-
-# ANCOVA
-m2 = aov(distress_sum ~ wave + sex + age_yrs + any_m_health, data = healthy)
-
-Anova(m2, type="III")
-m2_posthoc <- glht(m2, linfct = mcp(wave = "Tukey"))
-summary(m2_posthoc)
-
-# To get adjusted or marginal means
-# m2_adjusted <- effect("wave", m2, se=TRUE)
-# m2_adjusted$se
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# leger_chronic <- leger %>%
+#   filter(chronic_dummy == 1) %>%
+#   dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, wave) %>%
+#   mutate_all(as.factor)
 # 
-# summary(m2_adjusted)
+# chisq_test(leger_chronic, impacvd_sq001 ~ wave) #NS
+# chisq_test(leger_chronic, impacvd_sq002 ~ wave) #NS
+# chisq_test(leger_chronic, impacvd_sq003 ~ wave) #NS
+# 
+# leger_healthy <- leger %>%
+#   filter(chronic_dummy == 0) %>%
+#   dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, wave) %>%
+#   mutate_all(as.factor)
+# 
+# chisq_test(leger_healthy, impacvd_sq001 ~ wave) #Sig
+# cramerV(leger_healthy$impacvd_sq001, leger_healthy$wave, bias.correct = TRUE)
+# # Cramer V 
+# #  0.05298
+# 
+# chisq_test(leger_healthy, impacvd_sq002 ~ wave) #sig
+# cramerV(leger_healthy$impacvd_sq002, leger_healthy$wave, bias.correct = TRUE)
+# # Cramer V 
+# #  0.04708 
+#  
+# chisq_test(leger_healthy, impacvd_sq003 ~ wave) #sig
+# cramerV(leger_healthy$impacvd_sq003, leger_healthy$wave, bias.correct = TRUE)
+# # Cramer V 
+# #  0.060
+
 ```
-Effect sizes in order for sex, age, mental health
+
+## Univariate BINARY LOG REGRESSION - CHRONIC
 ```{r echo=FALSE, warning=FALSE}
-# Calculate effect sizes
+leger_model_chronic <- leger %>%
+  filter(chronic_dummy == 1) %>%
+  dplyr::select(sex, age_yrs, edu, hoinc, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003) %>%
+  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0))
 
-summary.lm(m2)
-# # sex, age, mental health, w3, w4, w5, w6, w7
-t_m2 <- c(-10.704, 15.372, -1.028, -7.737, 0.947, 0.738, 1.615) # <- contrasts
-df_m2 <- 4380
+# LOGIT FOR ANXIETY 2 - Impact on my health, including dying
+logit_c1 <- glm(impacvd_sq001 ~ sex,
+                family = "binomial",
+                data = leger_model_chronic)
 
-sqrt((t_m2^2)/(t_m2^2+df_m2))
-# Partial eta2
-# age
-904/(904+50374)
+logit_c2 <- glm(impacvd_sq001 ~ age_yrs,
+                family = "binomial",
+                data = leger_model_chronic)
 
-## These values were used to calculate cohen d effect size, might have been able to use some function but because was not sure I have done it manually
-# Marginal mean and N at w2
-6.242078
-730
-# Marginal mean and N at w3
-6.951690
-540
-# Marginal mean and N at w4
-7.104910
-608
-# Marginal mean and N at w5
-7.258187
-666
+logit_c3 <- glm(impacvd_sq001 ~ edu,
+                family = "binomial",
+                data = leger_model_chronic)
 
-# Calculate the SDs for effect size calculations
-se <- c(0.1190545, 0.1333590, 0.1263253, 0.1226668)
-N <- c(730, 540, 608, 666)
-sd <- se*sqrt(N)
-n1 <- 730
-s1 <- 3.216675
-n2 <-c(540, 608, 666)
-s2 <- c(3.098983, 3.114886, 3.165659)
+logit_c4 <- glm(impacvd_sq001 ~ hoinc,
+                family = "binomial",
+                data = leger_model_chronic)
 
-# Get pooled SDs for Cohen d's
-pooled <- sqrt(((n1-1)*s1^2 + (n2-1)*s2^2) / (n1+n1-2))
-## COHEN's D
-# 2-3 Cohen's d = (6.95169 - 6.242078)/2.953614 = 0.2402521
-# 2-4 Cohen's d = (7.10491 - 6.242078)/3.035274 = 0.2842682.
-# 2-5 Cohen's d = (7.258187 - 6.242078)/3.121586 = 0.3255105
+logit_c5 <- glm(impacvd_sq001 ~ chronic_multi,
+                family = "binomial",
+                data = leger_model_chronic)
+
+logit_c6 <- glm(impacvd_sq001 ~ any_m_health,
+                family = "binomial",
+                data = leger_model_chronic)
+
+tab_model(logit_c1, logit_c2, logit_c3, logit_c4, logit_c5, logit_c6)
+
+# LOGIT FOR DEPRESSION 2 - Impact on my health, including dying
+logit_c1.2 <- glm(impacvd_sq002 ~ sex,
+                family = "binomial",
+                data = leger_model_chronic)
+
+logit_c2.2 <- glm(impacvd_sq002 ~ age_yrs,
+                family = "binomial",
+                data = leger_model_chronic)
+
+logit_c3.2 <- glm(impacvd_sq002 ~ edu,
+                family = "binomial",
+                data = leger_model_chronic)
+
+logit_c4.2 <- glm(impacvd_sq002 ~ hoinc,
+                family = "binomial",
+                data = leger_model_chronic)
+
+logit_c5.2 <- glm(impacvd_sq002 ~ chronic_multi,
+                family = "binomial",
+                data = leger_model_chronic)
+
+logit_c6.2 <- glm(impacvd_sq002 ~ any_m_health,
+                family = "binomial",
+                data = leger_model_chronic)
+
+tab_model(logit_c1.2, logit_c2.2, logit_c3.2, logit_c4.2, logit_c5.2, logit_c6.2)
+
+# LOGIT FOR LONELINESS 2 - Impact on my health, including dying
+logit_c1.3 <- glm(impacvd_sq003 ~ sex,
+                family = "binomial",
+                data = leger_model_chronic)
+
+logit_c2.3 <- glm(impacvd_sq003 ~ age_yrs,
+                family = "binomial",
+                data = leger_model_chronic)
+
+logit_c3.3 <- glm(impacvd_sq003 ~ edu,
+                family = "binomial",
+                data = leger_model_chronic)
+
+logit_c4.3 <- glm(impacvd_sq003 ~ hoinc,
+                family = "binomial",
+                data = leger_model_chronic)
+
+logit_c5.3 <- glm(impacvd_sq003 ~ chronic_multi,
+                family = "binomial",
+                data = leger_model_chronic)
+
+logit_c6.3 <- glm(impacvd_sq003 ~ any_m_health,
+                family = "binomial",
+                data = leger_model_chronic)
+
+tab_model(logit_c1.3, logit_c2.3, logit_c3.3, logit_c4.3, logit_c5.3, logit_c6.3)
 ```
 
-### DISTRESS between chronic health condition v. no chronic health at each survey wave -->
+## Univariate BINARY LOG REGRESSION - HEALTHY
+```{r echo=FALSE, warning=FALSE}
+leger_model_healthy <- leger %>%
+  filter(chronic_dummy == 0) %>%
+  dplyr::select(sex, age_yrs, edu, hoinc, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003) %>%
+  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0))
 
+# LOGIT FOR ANXIETY 2 - Impact on my health, including dying
+logit_h1 <- glm(impacvd_sq001 ~ sex,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h2 <- glm(impacvd_sq001 ~ age_yrs,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h3 <- glm(impacvd_sq001 ~ edu,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h4 <- glm(impacvd_sq001 ~ hoinc,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h5 <- glm(impacvd_sq001 ~ chronic_multi,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h6 <- glm(impacvd_sq001 ~ any_m_health,
+                family = "binomial",
+                data = leger_model_healthy)
+
+tab_model(logit_h1, logit_h2, logit_h3, logit_h4, logit_h5, logit_h6)
+
+# LOGIT FOR DEPRESSION 2 - Impact on my health, including dying
+logit_h1.2 <- glm(impacvd_sq002 ~ sex,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h2.2 <- glm(impacvd_sq002 ~ age_yrs,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h3.2 <- glm(impacvd_sq002 ~ edu,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h4.2 <- glm(impacvd_sq002 ~ hoinc,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h5.2 <- glm(impacvd_sq002 ~ chronic_multi,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h6.2 <- glm(impacvd_sq002 ~ any_m_health,
+                family = "binomial",
+                data = leger_model_healthy)
+
+tab_model(logit_h1.2, logit_h2.2, logit_h3.2, logit_h4.2, logit_h5.2, logit_h6.2)
+
+# LOGIT FOR LONELINESS 2 - Impact on my health, including dying
+logit_h1.3 <- glm(impacvd_sq003 ~ sex,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h2.3 <- glm(impacvd_sq003 ~ age_yrs,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h3.3 <- glm(impacvd_sq003 ~ edu,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h4.3 <- glm(impacvd_sq003 ~ hoinc,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h5.3 <- glm(impacvd_sq003 ~ chronic_multi,
+                family = "binomial",
+                data = leger_model_healthy)
+
+logit_h6.3 <- glm(impacvd_sq003 ~ any_m_health,
+                family = "binomial",
+                data = leger_model_healthy)
+
+tab_model(logit_h1.3, logit_h2.3, logit_h3.3, logit_h4.3, logit_h5.3, logit_h6.3)
+```
+
+
+### CHI SQUARE AT EACH TIME POINT
 #### Wave 2
-```{r echo=FALSE}
-w2 <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
-  filter(wave == 2)
-  
-w2_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w2)
+```{r echo=T}
+library(tidymodels)
 
-Anova(w2_m1, type="III")
+w2 <- leger %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_all(as.factor) %>%
+  filter(wave == 2) %>%
+  drop_na()
+
+chisq_test(w2, impacvd_sq001 ~ chronic_dummy) #sig
+cramerV(w2$impacvd_sq001, w2$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#   0.1334 
+
+chisq_test(w2, impacvd_sq002 ~ chronic_dummy) #sig
+cramerV(w2$impacvd_sq002, w2$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#   0.107
+
+chisq_test(w2, impacvd_sq003 ~ chronic_dummy) #sig
+cramerV(w2$impacvd_sq003, w2$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#   0.1801  ## biggest effect size - medium
+
 ```
-Effect size = `r 109.9/(109.9+11504.4)`
 
 #### Wave 3
-```{r echo=FALSE}
+```{r echo=T}
 w3 <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
-  filter(wave == 3)
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_all(as.factor) %>%
+  filter(wave == 3) %>%
+  drop_na()
 
-w3_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w3)
+chisq_test(w3, impacvd_sq001 ~ chronic_dummy) #sig.
+cramerV(w3$impacvd_sq001, w3$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#  0.09307 
+ 
+chisq_test(w3, impacvd_sq002 ~ chronic_dummy) #NS
+chisq_test(w3, impacvd_sq003 ~ chronic_dummy) #NS
 
-Anova(w3_m1, type="III")
 ```
 #### Wave 4
-```{r echo=FALSE}
+```{r echo=T}
 w4 <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
-  filter(wave == 4)
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_all(as.factor) %>%
+  filter(wave == 4) %>%
+  drop_na()
 
-w4_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w4)
+chisq_test(w4, impacvd_sq001 ~ chronic_dummy) #sig.
+cramerV(w4$impacvd_sq001, w4$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#   0.1055 
 
-Anova(w4_m1, type="III")
+chisq_test(w4, impacvd_sq002 ~ chronic_dummy) #sig.
+cramerV(w4$impacvd_sq002, w4$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#    0.097 
+
+chisq_test(w4, impacvd_sq003 ~ chronic_dummy) #NS
 ```
-Effect size = `r 36.9/(36.9+11647.9)`
 
 #### Wave 5
-```{r echo=FALSE}
+```{r echo=T}
 w5 <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
-  filter(wave == 5)
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_all(as.factor) %>%
+  filter(wave == 5) %>%
+  drop_na()
 
-w5_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w5)
+chisq_test(w5, impacvd_sq001 ~ chronic_dummy) #sig.
+cramerV(w5$impacvd_sq001, w5$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#    0.075 
 
-Anova(w5_m1, type="III")  
+chisq_test(w5, impacvd_sq002 ~ chronic_dummy) #NS
+
+chisq_test(w5, impacvd_sq003 ~ chronic_dummy) #Sig
+cramerV(w5$impacvd_sq003, w5$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#  0.07809
 ```
 #### Wave 6
-```{r echo=FALSE}
+```{r echo=T}
 w6 <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
-  filter(wave == 6)
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_all(as.factor) %>%
+  filter(wave == 6) %>%
+  drop_na()
 
-w6_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w6)
+chisq_test(w6, impacvd_sq001 ~ chronic_dummy) #sig.
+cramerV(w6$impacvd_sq001, w6$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#   0.1142 
 
-Anova(w6_m1, type="III")   
+chisq_test(w6, impacvd_sq002 ~ chronic_dummy) #sig.
+cramerV(w6$impacvd_sq002, w6$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#   0.1294 
+  
+chisq_test(w6, impacvd_sq003 ~ chronic_dummy) #sig. 
+cramerV(w6$impacvd_sq003, w6$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#   0.1271 
 ```
-Effect size = `r 68.5/(68.5+10759.7)`
-
 #### Wave 7
-```{r echo=FALSE}
+```{r echo=T}
 w7 <- leger %>%
-  dplyr::select(distress_sum, sex, age_yrs, any_m_health, chronic_dummy, wave) %>%
-  filter(wave == 7)
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_all(as.factor) %>%
+  filter(wave == 7) %>%
+  drop_na()
 
-w7_m1 = aov(distress_sum ~ chronic_dummy + age_yrs + any_m_health, data = w7)
+chisq_test(w7, impacvd_sq001 ~ chronic_dummy) #sig.
+cramerV(w7$impacvd_sq001, w7$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#   0.1269 
 
-Anova(w7_m1, type="III")  
+chisq_test(w7, impacvd_sq002 ~ chronic_dummy) #sig.
+cramerV(w7$impacvd_sq002, w7$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#   0.1103 
+
+chisq_test(w7, impacvd_sq003 ~ chronic_dummy) #NS
 ```
-Effect size = `r 145.8/(145.8+10996.4)`
+#### Wave 8
+```{r echo=T}
+w8 <- leger %>%
+  dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_all(as.factor) %>%
+  filter(wave == 8) %>%
+  drop_na()
+
+chisq_test(w8, impacvd_sq001 ~ chronic_dummy) #sig.
+cramerV(w8$impacvd_sq001, w8$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#  0.09665 
+
+chisq_test(w8, impacvd_sq002 ~ chronic_dummy) #sig.
+cramerV(w8$impacvd_sq002, w8$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#   0.1109 
+
+chisq_test(w8, impacvd_sq003 ~ chronic_dummy) #sig
+cramerV(w8$impacvd_sq003, w8$chronic_dummy, bias.correct = TRUE)
+# Cramer V 
+#  0.07921 
+
+```

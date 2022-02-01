@@ -48,24 +48,7 @@ library(haven)
 cases <- read_csv("data/covid19-download-jan2022.csv") %>%
   filter(prname == "Canada") %>%
   dplyr::select(date, avgtotal_last7)
-# Read in the data and merge by date
-# 
-# sting <- read_csv("data/stringency_can-jan2022.csv")
-# cont <- read_csv("data/containment_can-jan2022.csv")
-# 
-# combine <- left_join(sting, cont, by = "date")
-# 
-# write_csv(combine, "data/combined_oxford-jan2022.csv")
 
-  # rename(c("stingency" = "rating.x", "containment" = "rating.y")) %>%
-  # pivot_longer(cols = c(stingency, containment), names_to = "index", values_to = "rating")
-
-# combined_oxford_cases <- left_join(combined_oxford, cases, by = "date") %>%
-#   filter(date > "2020-06-01") %>% 
-#   filter(date < "2021-09-30") %>%
-#   rename(c("stingency" = "rating.x", "containment" = "rating.y")) %>%
-#   pivot_longer(cols = c(stingency, containment, numtoday), names_to = "index", values_to = "rating")
-#   
 combined_oxford <- read_csv("data/combined_oxford-jan2022.csv")
 
 test <- left_join(combined_oxford, cases, by = "date") %>%
@@ -80,21 +63,34 @@ test <- left_join(combined_oxford, cases, by = "date") %>%
     date > "2021-03-10" & date < "2021-03-24" ~ 4,
     date > "2021-05-30" & date < "2021-06-15" ~ 5,
     date > "2021-09-09" & date < "2021-09-21" ~ 6,
-    date > "2021-11-15" & date < "2021-12-03" ~ 7)))# added the latest wave
+    date > "2021-11-15" & date < "2021-12-03" ~ 7))) %>%
+  filter(index == "stingency") # I decided to keep only 1 index due to great overlap
+
+test2<- test %>%
+  filter(!is.na(group))
+
 ###
 coeff <- 130
 
-ggplot(test, aes(x=date)) +
-  geom_line(aes(y = avgtotal_last7/coeff), color = "light blue", size = 1) + # Divide by 10 to get the same range than the temperature
-    #geom_ribbon(aes(x = date, group = group, ymax = avgtotal_last7, ymin = 0), fill = "light blue", alpha = 0.3) +
-  geom_line(aes(y = rating, color = index), size = 1) +
-  scale_y_continuous(name = "Stingency and containment indices",
-                     sec.axis = sec_axis(~.*coeff, name="7-day avg COVID-19 cases"))+
+context_fig <- ggplot(test, aes(x=date)) +
+  geom_line(aes(y = avgtotal_last7/coeff), color = "dark blue", size = 1) +
+  geom_line(aes(y = rating), color = "dark red",size = 1) +
+  scale_y_continuous(name = "Oxford stringency index",
+                     sec.axis = sec_axis(~.*coeff, name="7-day avg. COVID-19 cases"))+
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank()) +
   scale_x_date(date_labels = "%b %d", date_breaks = "1 month") +
-  geom_ribbon(aes(x = date, group = group, ymax = avgtotal_last7/coeff, ymin = 0), fill = "blue", alpha = 0.4) +
-  labs(x = "Time", color = "Oxford Index")
+  geom_ribbon(data = test2, aes(x = date, group = group, ymax = 80, ymin = 0), fill = "orange", alpha = 0.3) +
+  labs(x = "Time", color = "Oxford Index") +
+  geom_text(data=test[10, ], aes(y = rating), label = "Round 2", y = 82, size = 3) +
+  geom_text(data=test[155, ], aes(y = rating), label = "Round 3", y = 82, size = 3) +
+  geom_text(data=test[245, ], aes(y = rating), label = "Round 4 ", y = 82, size = 3) +
+  geom_text(data=test[290, ], aes(y = rating), label = " Round 5", y = 82, size = 3) +
+  geom_text(data=test[370, ], aes(y = rating), label = "Round 6", y = 82, size = 3) +
+  geom_text(data=test[475, ], aes(y = rating), label = "Round 7", y = 82, size = 3) +
+  geom_text(data=test[540, ], aes(y = rating), label = "Round 8", y = 82, size = 3)
+
+save(context_fig, file = "context_fig.RData")
 ```
