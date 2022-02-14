@@ -1,0 +1,87 @@
+---
+title: "CMAJ Analytical and results script: Psychological distress during COVID-19 in Canadian youth with and without chronic health conditions"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+library(here)
+library(psych)
+library(english)
+library(stringr)
+library(tableone)
+library(kableExtra)
+library(scales)
+library(ggridges)
+library(plotly)
+library(patchwork)
+library(haven)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(table1)
+library(rstatix)
+library(car)
+library(multcomp)
+library(effects)
+library(pastecs)
+library(rcompanion)
+```
+
+```{r data, echo=FALSE, message=FALSE, warning=FALSE}
+# Read in the clean csv file
+leger <- read_csv("data/cmaj_analyses_jan2022.csv")
+
+leger_jamovi <- leger %>%
+  dplyr::select(age_yrs, sex, edu, hoinc, chronic_descriptive, chronic_dummy, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003, wave)
+
+write_csv(leger_jamovi, "~/Desktop/leger_anal.csv")
+
+leger_chronic2 <- leger %>%
+  filter(chronic_dummy == 1) %>%
+  dplyr::select(age_yrs, sex, edu, hoinc, chronic_descriptive, chronic_dummy, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003, wave)
+
+write_csv(leger_chronic2, "~/Desktop/chronic_anal.csv")
+
+leger_healthy2 <- leger %>%
+  filter(chronic_dummy == 0) %>%
+  dplyr::select(age_yrs, sex, edu, hoinc, chronic_descriptive, chronic_dummy, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003, wave)
+
+write_csv(leger_healthy2, "~/Desktop/healthy_anal.csv")
+
+# set seed for all analyses and wrangling
+set.seed(1)
+```
+
+## RESULTS
+### Sample
+
+```{r echo=FALSE, warning=FALSE}
+table_data2 <- leger %>%
+  dplyr::select(chronic_dummy, impacvd_sq001, impacvd_sq002, impacvd_sq003, wave) %>%
+  drop_na(impacvd_sq001, impacvd_sq002, impacvd_sq003) %>%
+  mutate(chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("No chronic condition", "Chronic condition")),
+         wave = factor(wave),
+         impacvd_sq001 = factor(impacvd_sq001, 
+                                levels = c(0:3),
+                                labels = c("None", "Little", "Some", "Great extent")),
+         impacvd_sq002 = factor(impacvd_sq002, 
+                                levels = c(0:3),
+                                labels = c("None", "Little", "Some", "Great extent")),
+         impacvd_sq003 = factor(impacvd_sq003, 
+                                levels = c(0:3),
+                                labels = c("None", "Little", "Some", "Great extent")))
+
+label(table_data2$wave) <- "Survey round"
+label(table_data2$impacvd_sq001) <- "Anxiety"
+label(table_data2$impacvd_sq002) <- "Depression"
+label(table_data2$impacvd_sq003) <- "Loneliness"
+
+table1(~ impacvd_sq001 + impacvd_sq002 + impacvd_sq003 | wave + chronic_dummy,
+       data = table_data2)
+
+```
