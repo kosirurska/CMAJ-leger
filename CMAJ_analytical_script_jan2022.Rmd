@@ -34,8 +34,30 @@ library(rcompanion)
 # Read in the clean csv file
 leger <- read_csv("data/cmaj_analyses_jan2022.csv")
 
+leger_jamovi <- leger %>%
+  #filter(chronic_dummy == 1) %>%
+  dplyr::select(age_yrs, sex, edu, hoinc, chronic_descriptive, chronic_dummy, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003, wave)
+
+write_csv(leger_jamovi, "~/Desktop/leger_anal.csv")
+
+
+leger_chronic2 <- leger %>%
+  filter(chronic_dummy == 1) %>%
+  dplyr::select(age_yrs, sex, edu, hoinc, chronic_descriptive, chronic_dummy, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003, wave)
+
+write_csv(leger_chronic2, "~/Desktop/chronic_anal.csv")
+
+leger_healthy2 <- leger %>%
+  filter(chronic_dummy == 0) %>%
+  dplyr::select(age_yrs, sex, edu, hoinc, chronic_descriptive, chronic_dummy, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003, wave)
+
+write_csv(leger_healthy2, "~/Desktop/healthy_anal.csv")
+
+
 # set seed for all analyses and wrangling
 set.seed(1)
+
+# context_fig
 ```
 
 ## RESULTS
@@ -69,14 +91,120 @@ units(table_data$age_yrs) <- "years"
 
 table1(~ age_yrs + sex + edu + hoinc + province_full + chronic_descriptive + chronic_multi + any_m_health + distress_sum + vaccine | chronic_dummy,
        data = table_data)
-
 ```
 
 # FIGURE
+
 ```{r echo=FALSE, fig.width=13, fig.height=16}
-leger %>%
-  group_by(wave, chronic_dummy) %>%
-  shapiro_test(distress_sum)
+#  This figure shows over time proportions for each of the 4 response options
+# leger %>%
+#   group_by(wave, chronic_dummy) %>%
+#   shapiro_test(distress_sum)
+# 
+# label <- c("0" = "No chronic health condition", "1" = "Chronic health")
+# label_wave <- c("2" = "Round 2",
+#                 "3" = "Round 3",
+#                 "4" = "Round 4",
+#                 "5" = "Round 5",
+#                 "6" = "Round 6",
+#                 "7" = "Round 7",
+#                 "8" = "Round 8")
+# 
+# A <- leger %>%
+#   dplyr::select(wave, chronic_dummy, impacvd_sq001) %>%
+#   group_by(wave, chronic_dummy, impacvd_sq001) %>%
+#   drop_na() %>%
+#   count() %>%
+#   ungroup(impacvd_sq001) %>%
+#   mutate(sum = sum(n),
+#          prop = n/sum*100) %>%
+#   ggplot(aes(x = impacvd_sq001, y = prop)) +
+#   geom_col(aes(fill = factor(chronic_dummy)),
+#                position = 'dodge') +
+#   facet_grid(~ wave,
+#              labeller = labeller(wave = label_wave)) +
+#   theme_bw() +
+#   scale_fill_discrete(breaks = c(0, 1),
+#                      labels = c("No", "Yes")) +
+#   scale_x_continuous(breaks = c(0, 1, 2, 3),
+#                      labels = c("None", "Little", "Some", "Great extent")) +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   labs(title = "COVID-19 anxiety", x = "Response", y = "Prooportion (%)", fill = "Chronic condition")
+#  
+# B <- leger %>%
+#   dplyr::select(wave, chronic_dummy, impacvd_sq002) %>%
+#   group_by(wave, chronic_dummy, impacvd_sq002) %>%
+#   drop_na() %>%
+#   count() %>%
+#   ungroup(impacvd_sq002) %>%
+#   mutate(sum = sum(n),
+#          prop = n/sum*100) %>%
+#   ggplot(aes(x = impacvd_sq002, y = prop)) +
+#   geom_col(aes(fill = factor(chronic_dummy)),
+#                position = 'dodge') +
+#   facet_grid(~ wave,
+#              labeller = labeller(wave = label_wave)) +
+#   theme_bw() +
+#   scale_fill_discrete(breaks = c(0, 1),
+#                      labels = c("No", "Yes")) +
+#   scale_x_continuous(breaks = c(0, 1, 2, 3),
+#                        labels = c("None", "Little", "Some", "Great extent")) +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   labs(title = "COVID-19 depression", x = "Response", y = "Prooportion (%)", fill = "Chronic condition")
+# 
+# C <- leger %>%
+#   dplyr::select(wave, chronic_dummy, impacvd_sq003) %>%
+#   group_by(wave, chronic_dummy, impacvd_sq003) %>%
+#   drop_na() %>%
+#   count() %>%
+#   ungroup(impacvd_sq003) %>%
+#   mutate(sum = sum(n),
+#          prop = n/sum*100) %>%
+#   ggplot(aes(x = impacvd_sq003, y = prop)) +
+#   geom_col(aes(fill = factor(chronic_dummy)),
+#                position = 'dodge') +
+#   facet_grid(~ wave,
+#              labeller = labeller(wave = label_wave)) +
+#   theme_bw() +
+#   scale_fill_discrete(breaks = c(0, 1),
+#                      labels = c("No", "Yes")) +
+#   scale_x_continuous(breaks = c(0, 1, 2, 3),
+#                        labels = c("None", "Little", "Some", "Great extent")) +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   labs(title = "COVID-19 loneliness", x = "Response", y = "Prooportion (%)", fill = "Chronic condition")
+#  
+# 
+# 
+# A/B/C + plot_annotation(tag_levels = "A") +
+#   plot_layout(guides = 'collect')
+# 
+# leger %>%
+#   dplyr::select(wave, chronic_dummy, impacvd_sq003) %>%
+#   group_by(wave, chronic_dummy, impacvd_sq003) %>%
+#   drop_na() %>%
+#   count() %>%
+#   ungroup(impacvd_sq003) %>%
+#   mutate(sum = sum(n),
+#          prop = n/sum*100) %>%
+#   filter(impacvd_sq003 == 3) %>%
+#   ggplot(aes(x = impacvd_sq003, y = prop)) +
+#   geom_col(aes(fill = factor(chronic_dummy)),
+#                position = 'dodge') +
+#   facet_grid(~ wave,
+#              labeller = labeller(wave = label_wave)) +
+#   theme_bw() +
+#   scale_fill_viridis_d(begin = 0.3, end = 0.8,
+#                        breaks = c(0, 1),
+#                      labels = c("No", "Yes")) +
+#   theme(axis.text.x = element_blank(),
+#         axis.ticks.x = element_blank()) +
+#   labs(title = "COVID-19 loneliness", x = " ", y = "Prooportion (%)", fill = "Chronic condition")
+#  
+```
+
+
+```{r fig2, echo=FALSE, fig.width=13, fig.height=16}
+#  This figure shows over time proportions for dichotomous outcome
 
 label <- c("0" = "No chronic health condition", "1" = "Chronic health")
 label_wave <- c("2" = "Round 2",
@@ -87,7 +215,7 @@ label_wave <- c("2" = "Round 2",
                 "7" = "Round 7",
                 "8" = "Round 8")
 
-A <- leger %>%
+fig2_a<- leger %>%
   dplyr::select(wave, chronic_dummy, impacvd_sq001) %>%
   group_by(wave, chronic_dummy, impacvd_sq001) %>%
   drop_na() %>%
@@ -95,20 +223,22 @@ A <- leger %>%
   ungroup(impacvd_sq001) %>%
   mutate(sum = sum(n),
          prop = n/sum*100) %>%
+  filter(impacvd_sq001 == 3) %>%
   ggplot(aes(x = impacvd_sq001, y = prop)) +
   geom_col(aes(fill = factor(chronic_dummy)),
                position = 'dodge') +
   facet_grid(~ wave,
              labeller = labeller(wave = label_wave)) +
   theme_bw() +
-  scale_fill_discrete(breaks = c(0, 1),
+  scale_fill_viridis_d(begin = 0.3, end = 0.8,
+                       breaks = c(0, 1),
                      labels = c("No", "Yes")) +
-  scale_x_continuous(breaks = c(0, 1, 2, 3),
-                     labels = c("None", "Little", "Some", "Great extent")) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "COVID-19 anxiety", x = "Response", y = "Prooportion (%)", fill = "Chronic condition")
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  labs(title = "COVID-19 anxiety", x = " ", y = "Prooportion (%)", fill = "Chronic condition")
  
-B <- leger %>%
+
+fig2_b<-leger %>%
   dplyr::select(wave, chronic_dummy, impacvd_sq002) %>%
   group_by(wave, chronic_dummy, impacvd_sq002) %>%
   drop_na() %>%
@@ -116,20 +246,22 @@ B <- leger %>%
   ungroup(impacvd_sq002) %>%
   mutate(sum = sum(n),
          prop = n/sum*100) %>%
+  filter(impacvd_sq002 == 3) %>%
   ggplot(aes(x = impacvd_sq002, y = prop)) +
   geom_col(aes(fill = factor(chronic_dummy)),
                position = 'dodge') +
   facet_grid(~ wave,
              labeller = labeller(wave = label_wave)) +
   theme_bw() +
-  scale_fill_discrete(breaks = c(0, 1),
+  scale_fill_viridis_d(begin = 0.3, end = 0.8,
+                       breaks = c(0, 1),
                      labels = c("No", "Yes")) +
-  scale_x_continuous(breaks = c(0, 1, 2, 3),
-                       labels = c("None", "Little", "Some", "Great extent")) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "COVID-19 depression", x = "Response", y = "Prooportion (%)", fill = "Chronic condition")
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  labs(title = "COVID-19 depression", x = " ", y = "Prooportion (%)", fill = "Chronic condition")
+ 
 
-C <- leger %>%
+fig2_c<-leger %>%
   dplyr::select(wave, chronic_dummy, impacvd_sq003) %>%
   group_by(wave, chronic_dummy, impacvd_sq003) %>%
   drop_na() %>%
@@ -137,22 +269,22 @@ C <- leger %>%
   ungroup(impacvd_sq003) %>%
   mutate(sum = sum(n),
          prop = n/sum*100) %>%
+  filter(impacvd_sq003 == 3) %>%
   ggplot(aes(x = impacvd_sq003, y = prop)) +
   geom_col(aes(fill = factor(chronic_dummy)),
                position = 'dodge') +
   facet_grid(~ wave,
              labeller = labeller(wave = label_wave)) +
   theme_bw() +
-  scale_fill_discrete(breaks = c(0, 1),
+  scale_fill_viridis_d(begin = 0.3, end = 0.8,
+                       breaks = c(0, 1),
                      labels = c("No", "Yes")) +
-  scale_x_continuous(breaks = c(0, 1, 2, 3),
-                       labels = c("None", "Little", "Some", "Great extent")) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "COVID-19 loneliness", x = "Response", y = "Prooportion (%)", fill = "Chronic condition")
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  labs(title = "COVID-19 loneliness", x = " ", y = "Prooportion (%)", fill = "Chronic condition")
  
 
-
-A/B/C + plot_annotation(tag_levels = "A") +
+(fig2_a/fig2_b/fig2_c) + plot_annotation(tag_levels = "A") +
   plot_layout(guides = 'collect')
 ```
 
@@ -376,6 +508,7 @@ library(tidymodels)
 
 w2 <- leger %>%
   dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0)) %>%
   mutate_all(as.factor) %>%
   filter(wave == 2) %>%
   drop_na()
@@ -401,6 +534,7 @@ cramerV(w2$impacvd_sq003, w2$chronic_dummy, bias.correct = TRUE)
 ```{r echo=T}
 w3 <- leger %>%
   dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0)) %>%
   mutate_all(as.factor) %>%
   filter(wave == 3) %>%
   drop_na()
@@ -418,6 +552,7 @@ chisq_test(w3, impacvd_sq003 ~ chronic_dummy) #NS
 ```{r echo=T}
 w4 <- leger %>%
   dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0)) %>%
   mutate_all(as.factor) %>%
   filter(wave == 4) %>%
   drop_na()
@@ -439,6 +574,7 @@ chisq_test(w4, impacvd_sq003 ~ chronic_dummy) #NS
 ```{r echo=T}
 w5 <- leger %>%
   dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0)) %>%
   mutate_all(as.factor) %>%
   filter(wave == 5) %>%
   drop_na()
@@ -459,6 +595,7 @@ cramerV(w5$impacvd_sq003, w5$chronic_dummy, bias.correct = TRUE)
 ```{r echo=T}
 w6 <- leger %>%
   dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0)) %>%
   mutate_all(as.factor) %>%
   filter(wave == 6) %>%
   drop_na()
@@ -482,6 +619,7 @@ cramerV(w6$impacvd_sq003, w6$chronic_dummy, bias.correct = TRUE)
 ```{r echo=T}
 w7 <- leger %>%
   dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0)) %>%
   mutate_all(as.factor) %>%
   filter(wave == 7) %>%
   drop_na()
@@ -502,6 +640,7 @@ chisq_test(w7, impacvd_sq003 ~ chronic_dummy) #NS
 ```{r echo=T}
 w8 <- leger %>%
   dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
+  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0)) %>%
   mutate_all(as.factor) %>%
   filter(wave == 8) %>%
   drop_na()
