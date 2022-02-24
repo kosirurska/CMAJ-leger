@@ -28,6 +28,7 @@ library(multcomp)
 library(effects)
 library(pastecs)
 library(rcompanion)
+library(tidymodels)
 ```
 
 ```{r data, echo=FALSE, message=FALSE, warning=FALSE}
@@ -203,91 +204,6 @@ table1(~ age_yrs + sex + edu + hoinc + province_full + chronic_descriptive + chr
 ```
 
 
-```{r fig2, echo=FALSE, fig.width=13, fig.height=16}
-#  This figure shows over time proportions for dichotomous outcome
-
-label <- c("0" = "No chronic health condition", "1" = "Chronic health")
-label_wave <- c("2" = "Round 2",
-                "3" = "Round 3",
-                "4" = "Round 4",
-                "5" = "Round 5",
-                "6" = "Round 6",
-                "7" = "Round 7",
-                "8" = "Round 8")
-
-fig2_a<- leger %>%
-  dplyr::select(wave, chronic_dummy, impacvd_sq001) %>%
-  group_by(wave, chronic_dummy, impacvd_sq001) %>%
-  drop_na() %>%
-  count() %>%
-  ungroup(impacvd_sq001) %>%
-  mutate(sum = sum(n),
-         prop = n/sum*100) %>%
-  filter(impacvd_sq001 == 3) %>%
-  ggplot(aes(x = impacvd_sq001, y = prop)) +
-  geom_col(aes(fill = factor(chronic_dummy)),
-               position = 'dodge') +
-  facet_grid(~ wave,
-             labeller = labeller(wave = label_wave)) +
-  theme_bw() +
-  scale_fill_viridis_d(begin = 0.3, end = 0.8,
-                       breaks = c(0, 1),
-                     labels = c("No", "Yes")) +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank()) +
-  labs(title = "COVID-19 anxiety", x = " ", y = "Prooportion (%)", fill = "Chronic condition")
- 
-
-fig2_b<-leger %>%
-  dplyr::select(wave, chronic_dummy, impacvd_sq002) %>%
-  group_by(wave, chronic_dummy, impacvd_sq002) %>%
-  drop_na() %>%
-  count() %>%
-  ungroup(impacvd_sq002) %>%
-  mutate(sum = sum(n),
-         prop = n/sum*100) %>%
-  filter(impacvd_sq002 == 3) %>%
-  ggplot(aes(x = impacvd_sq002, y = prop)) +
-  geom_col(aes(fill = factor(chronic_dummy)),
-               position = 'dodge') +
-  facet_grid(~ wave,
-             labeller = labeller(wave = label_wave)) +
-  theme_bw() +
-  scale_fill_viridis_d(begin = 0.3, end = 0.8,
-                       breaks = c(0, 1),
-                     labels = c("No", "Yes")) +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank()) +
-  labs(title = "COVID-19 depression", x = " ", y = "Prooportion (%)", fill = "Chronic condition")
- 
-
-fig2_c<-leger %>%
-  dplyr::select(wave, chronic_dummy, impacvd_sq003) %>%
-  group_by(wave, chronic_dummy, impacvd_sq003) %>%
-  drop_na() %>%
-  count() %>%
-  ungroup(impacvd_sq003) %>%
-  mutate(sum = sum(n),
-         prop = n/sum*100) %>%
-  filter(impacvd_sq003 == 3) %>%
-  ggplot(aes(x = impacvd_sq003, y = prop)) +
-  geom_col(aes(fill = factor(chronic_dummy)),
-               position = 'dodge') +
-  facet_grid(~ wave,
-             labeller = labeller(wave = label_wave)) +
-  theme_bw() +
-  scale_fill_viridis_d(begin = 0.3, end = 0.8,
-                       breaks = c(0, 1),
-                     labels = c("No", "Yes")) +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank()) +
-  labs(title = "COVID-19 loneliness", x = " ", y = "Prooportion (%)", fill = "Chronic condition")
- 
-
-(fig2_a/fig2_b/fig2_c) + plot_annotation(tag_levels = "A") +
-  plot_layout(guides = 'collect')
-```
-
 ## Within-group comparisons over time, adjusted for age & sex & mental health diagnosis (anxiety or depression)
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
@@ -322,12 +238,43 @@ fig2_c<-leger %>%
 
 ```
 
+## Posthoc
+```{r}
+#adjusting for 
+post_leger <- leger %>%
+  dplyr::select(chronic_dummy, sex, age_yrs, edu, hoinc, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003, wave) %>%
+  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0)) %>%
+  mutate(education = case_when(edu == "Primary" ~ 1,
+                               edu == "Secondary" ~ 2,
+                               edu == "College" ~ 3,
+                               edu == "Graduate" ~ 4))
+
+post_anx <- glm(impacvd_sq001 ~ chronic_dummy + sex + age_yrs + education + hoinc + any_m_health + wave,
+                family = "binomial",
+                data = post_leger)
+
+post_depr <- glm(impacvd_sq002 ~ chronic_dummy + sex + age_yrs + education + hoinc + any_m_health + wave,
+                family = "binomial",
+                data = post_leger)
+
+post_lon <- glm(impacvd_sq003 ~ chronic_dummy + sex + age_yrs + education + hoinc + any_m_health + wave,
+                family = "binomial",
+                data = post_leger)
+
+
+tab_model(post_anx, post_depr, post_lon)
+```
+
 ## Univariate BINARY LOG REGRESSION - CHRONIC
 ```{r echo=FALSE, warning=FALSE}
 leger_model_chronic <- leger %>%
   filter(chronic_dummy == 1) %>%
   dplyr::select(sex, age_yrs, edu, hoinc, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003) %>%
-  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0))
+  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0)) %>%
+  mutate(education = case_when(edu == "Primary" ~ 1,
+                               edu == "Secondary" ~ 2,
+                               edu == "College" ~ 3,
+                               edu == "Graduate" ~ 4))
 
 # LOGIT FOR ANXIETY 2 - Impact on my health, including dying
 logit_c1 <- glm(impacvd_sq001 ~ sex,
@@ -338,7 +285,7 @@ logit_c2 <- glm(impacvd_sq001 ~ age_yrs,
                 family = "binomial",
                 data = leger_model_chronic)
 
-logit_c3 <- glm(impacvd_sq001 ~ edu,
+logit_c3 <- glm(impacvd_sq001 ~ education,
                 family = "binomial",
                 data = leger_model_chronic)
 
@@ -365,7 +312,7 @@ logit_c2.2 <- glm(impacvd_sq002 ~ age_yrs,
                 family = "binomial",
                 data = leger_model_chronic)
 
-logit_c3.2 <- glm(impacvd_sq002 ~ edu,
+logit_c3.2 <- glm(impacvd_sq002 ~ education,
                 family = "binomial",
                 data = leger_model_chronic)
 
@@ -392,7 +339,7 @@ logit_c2.3 <- glm(impacvd_sq003 ~ age_yrs,
                 family = "binomial",
                 data = leger_model_chronic)
 
-logit_c3.3 <- glm(impacvd_sq003 ~ edu,
+logit_c3.3 <- glm(impacvd_sq003 ~ education,
                 family = "binomial",
                 data = leger_model_chronic)
 
@@ -416,7 +363,11 @@ tab_model(logit_c1.3, logit_c2.3, logit_c3.3, logit_c4.3, logit_c5.3, logit_c6.3
 leger_model_healthy <- leger %>%
   filter(chronic_dummy == 0) %>%
   dplyr::select(sex, age_yrs, edu, hoinc, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003) %>%
-  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0))
+  mutate_at(vars(impacvd_sq001, impacvd_sq002, impacvd_sq003), ~ifelse(. == 3, 1, 0)) %>%
+  mutate(education = case_when(edu == "Primary" ~ 1,
+                               edu == "Secondary" ~ 2,
+                               edu == "College" ~ 3,
+                               edu == "Graduate" ~ 4))
 
 # LOGIT FOR ANXIETY 2 - Impact on my health, including dying
 logit_h1 <- glm(impacvd_sq001 ~ sex,
@@ -427,7 +378,7 @@ logit_h2 <- glm(impacvd_sq001 ~ age_yrs,
                 family = "binomial",
                 data = leger_model_healthy)
 
-logit_h3 <- glm(impacvd_sq001 ~ edu,
+logit_h3 <- glm(impacvd_sq001 ~ education,
                 family = "binomial",
                 data = leger_model_healthy)
 
@@ -454,7 +405,7 @@ logit_h2.2 <- glm(impacvd_sq002 ~ age_yrs,
                 family = "binomial",
                 data = leger_model_healthy)
 
-logit_h3.2 <- glm(impacvd_sq002 ~ edu,
+logit_h3.2 <- glm(impacvd_sq002 ~ education,
                 family = "binomial",
                 data = leger_model_healthy)
 
@@ -481,7 +432,7 @@ logit_h2.3 <- glm(impacvd_sq003 ~ age_yrs,
                 family = "binomial",
                 data = leger_model_healthy)
 
-logit_h3.3 <- glm(impacvd_sq003 ~ edu,
+logit_h3.3 <- glm(impacvd_sq003 ~ education,
                 family = "binomial",
                 data = leger_model_healthy)
 
@@ -504,7 +455,6 @@ tab_model(logit_h1.3, logit_h2.3, logit_h3.3, logit_h4.3, logit_h5.3, logit_h6.3
 ### CHI SQUARE AT EACH TIME POINT
 #### Wave 2
 ```{r echo=T}
-library(tidymodels)
 
 w2 <- leger %>%
   dplyr::select(impacvd_sq001, impacvd_sq002, impacvd_sq003, chronic_dummy, wave) %>%
@@ -528,6 +478,7 @@ cramerV(w2$impacvd_sq003, w2$chronic_dummy, bias.correct = TRUE)
 # Cramer V 
 #   0.1801  ## biggest effect size - medium
 
+nrow(w2)
 ```
 
 #### Wave 3
@@ -547,6 +498,7 @@ cramerV(w3$impacvd_sq001, w3$chronic_dummy, bias.correct = TRUE)
 chisq_test(w3, impacvd_sq002 ~ chronic_dummy) #NS
 chisq_test(w3, impacvd_sq003 ~ chronic_dummy) #NS
 
+nrow(w3)
 ```
 #### Wave 4
 ```{r echo=T}
@@ -568,6 +520,9 @@ cramerV(w4$impacvd_sq002, w4$chronic_dummy, bias.correct = TRUE)
 #    0.097 
 
 chisq_test(w4, impacvd_sq003 ~ chronic_dummy) #NS
+cramerV(w4$impacvd_sq003, w4$chronic_dummy, bias.correct = TRUE)
+
+nrow(w4)
 ```
 
 #### Wave 5
@@ -590,6 +545,8 @@ chisq_test(w5, impacvd_sq003 ~ chronic_dummy) #Sig
 cramerV(w5$impacvd_sq003, w5$chronic_dummy, bias.correct = TRUE)
 # Cramer V 
 #  0.07809
+
+nrow(w5)
 ```
 #### Wave 6
 ```{r echo=T}
@@ -614,6 +571,8 @@ chisq_test(w6, impacvd_sq003 ~ chronic_dummy) #sig.
 cramerV(w6$impacvd_sq003, w6$chronic_dummy, bias.correct = TRUE)
 # Cramer V 
 #   0.1271 
+
+nrow(w6)
 ```
 #### Wave 7
 ```{r echo=T}
@@ -635,6 +594,8 @@ cramerV(w7$impacvd_sq002, w7$chronic_dummy, bias.correct = TRUE)
 #   0.1103 
 
 chisq_test(w7, impacvd_sq003 ~ chronic_dummy) #NS
+cramerV(w7$impacvd_sq003, w7$chronic_dummy, bias.correct = TRUE)
+nrow(w7)
 ```
 #### Wave 8
 ```{r echo=T}
@@ -660,4 +621,5 @@ cramerV(w8$impacvd_sq003, w8$chronic_dummy, bias.correct = TRUE)
 # Cramer V 
 #  0.07921 
 
+nrow(w8)
 ```

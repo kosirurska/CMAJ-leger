@@ -107,7 +107,8 @@ chronic <- leger %>%
 ## 1     5  1448      2.17 0.0553
 
 # ANCOVA
-m1 = aov(distress_sum ~ wave + sex + age_yrs + any_m_health, data = chronic)
+m1 = aov(distress_sum ~ wave + sex + age_yrs,
+         data = chronic)
 
 Anova(m1, type="III")
 
