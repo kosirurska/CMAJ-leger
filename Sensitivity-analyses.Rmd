@@ -22,11 +22,11 @@ library(tableone)
 
 Aim:
 
-This document shows the sensitivity analysis in order to demonstrate that the independent sample across survey rounds are similar enough in terms of demographics so that they can be compared. Because we analyzed independent sub-samples of a representative survey across 6 time points, we compared these samples on the main demographic characteristic within each group: chronic and no chronic health condition. Individuals with chronic health condition did not vary on any variables. Individuals with no chronic health conditions showed minor discrepancies in age, sex, and educational distributions between separate waves. The complete table output is available on the study repository. See below for the exact breakdowns and details.
+This document shows the sensitivity analysis in order to demonstrate that the independent sample across survey rounds are similar enough in terms of demographics so that they can be compared. Because we analyzed independent sub-samples of a representative survey across seven time points, we compared these samples on the main demographic characteristic within each group: chronic and no chronic health condition. Individuals with chronic health condition did not vary on any variables. Individuals with no chronic health conditions showed minor discrepancies in age, sex, and educational distributions between separate waves. The complete table output is available on the study repository. See below for the exact breakdowns and details.
 
 ```{r data, echo=FALSE, message=FALSE, warning=FALSE}
 # Read in the clean csv file
-leger <- read_csv("data/cmaj_analyses.csv")
+leger <- read_csv("data/cmaj_analyses_jan2022.csv")
 
 leger_chronic <- leger %>%
   filter(chronic_dummy == 1)
@@ -35,7 +35,7 @@ leger_healthy <- leger %>%
   filter(chronic_dummy == 0)
 ```
 
-## TABLE 1: Young adults with chronic health conditions across survey rounds/waves
+## TABLE S1: Young adults with chronic health conditions across survey rounds/waves
 
 No significant differences were observed.
 
@@ -59,7 +59,7 @@ table_1 <- CreateTableOne(vars = var_list,
 table_1
 ```
 
-## TABLE 2: Young adults with no chronic health conditions across survey rounds/waves
+## TABLE S2: Young adults with no chronic health conditions across survey rounds/waves
 
 There exist minor differences between some waves in variables age, sex, education level, and perceived income status.
 
