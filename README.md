@@ -18,13 +18,13 @@ Montreal, Québec, Canada
 
 **Abstract**:
 
-**Background**: The spread of COVID-19 resulted in many changes in medical care, which may have particularly impacted young people with chronic health conditions. In this study we report on psychological impact of COVID-19 and compare young adults with and without physical chronic health conditions across time. 
+**Background**: The COVID-19 pandemic resulted in many disruptions, some of which may have particularly impacted young people with chronic health conditions. In this study, we report on the psychological impacts of the pandemic on young adults with and without chronic health conditions. 
 
-**Methods**: The analyses are based on 6 independent cross-sectional rounds of a Canadian representative survey collected between June 2020 and September 2021 (www.icarestudy.com). General linear models were used to compare levels of psychological distress between individuals with physical chronic health conditions and healthy peers across the pandemic. Models adjusted for sex, age, and mental health diagnosis.
+**Methods**: Analyses used seven independent cross-sectional rounds of a Canadian representative survey collected between June, 2020, and September, 2021. Anxiety, depression and loneliness levels were compared between young adults with and without chronic health conditions at each survey round using chisquare. Logistic regressions assessed the associations between anxiety, depression and loneliness and demographic factors within each group.  Post Hoc multivariate logistic regressions were run to assess if young adults with chronic conditions experience higher odds of reporting psychological distress. 
 
-**Results**: Participants were young adults (YAs; N = 6,170; aged 18 – 39, 60% female).  Among those 1,544 (25%) reported having physical chronic health conditions. The level of distress over the course of the pandemic varied significantly among YAs without chronic conditions, F(5, 4380) = 12.99, p < 0.001, partial η2 = 0.01, but not among YAs with said conditions. The level of distress experienced among YAs with chronic conditions was significantly higher at 3 survey rounds that coincide with a more stable epidemiological state. Being female, younger, and having a mental health diagnosis was associated with higher levels of reported distress across the pandemic regardless of the health status.
+**Results**: Participants were young adults (N = 7,186; aged 18-39; 60% female).  Among those, 25% reported having one or more chronic health conditions. Being female, younger, and having a mental health diagnosis was associated with higher levels of reported distress across the pandemic, regardless of health status. Multivariate analyses showed that compared to healthy peers, young adults with chronic conditions reported significantly higher anxiety (OR = 1.15, 95% CI 1.01 – 1.32, p = 0.04), and loneliness (OR = 1.16, 95% CI 1.01 – 1.33, p = 0.041), but not depression.
 
-**Interpretation**: Understanding the impact of COVID-19 on young adults with and without chronic health conditions will help us improve the existing resources and adapt public health policies to prevent the lingering effects of psychological distress on long-term health outcomes.
+**Interpretation**: Understanding the impact of the COVID-19 pandemic on young adults with and without chronic health conditions can help us improve existing resources and adapt public health policies to prevent the lingering effects from psychological distress on long-term health.
 
 ***
 
