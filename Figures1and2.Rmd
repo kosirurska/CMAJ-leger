@@ -1,0 +1,223 @@
+---
+title: "Figures 1 and 2"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+library(here)
+library(psych)
+library(english)
+library(stringr)
+library(tableone)
+library(kableExtra)
+library(scales)
+library(ggridges)
+library(plotly)
+library(patchwork)
+library(haven)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(table1)
+library(rstatix)
+library(car)
+library(multcomp)
+library(effects)
+library(pastecs)
+library(rcompanion)
+library(tidymodels)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# set seed for all analyses and wrangling
+ set.seed(1)
+
+## This file is to wrangle Oxford policy data
+# Downloaded raw files from GitHub on December 3, 2021
+# https://github.com/OxCGRT/covid-policy-tracker/tree/master/data
+
+# # I wanted to get the indices from Canada
+# stringency_index_raw <- read_csv("data/stringency_index-jan2022.csv") %>%
+#   filter(country_code == "CAN") %>%
+#   dplyr::select(-country_code, -country_name, -...1) %>%
+#   pivot_longer(cols = everything(), names_to = "date", values_to = "rating")
+# 
+# write_csv(stringency_index_raw, "Data/stringency_can-jan2022.csv")
+# # #
+# # # Containment index
+# containment_index <- read_csv("data/containment_health_index-jan2022.csv") %>%
+#   filter(country_code == "CAN") %>%
+#   dplyr::select(-country_code, -country_name, -...1) %>%
+#   pivot_longer(cols = everything(), names_to = "date", values_to = "rating")
+# 
+# write_csv(containment_index, "Data/containment_can-jan2022.csv")
+
+# Because the date was saved as a combination of string and number I manually converted to YYYY-MM-DD format for the ease of processing further
+# There is probably a way to do this in r, but I was tired and lazy and it was a quick fix
+
+cases <- read_csv("data/covid19-download-jan2022.csv") %>%
+  filter(prname == "Canada") %>%
+  dplyr::select(date, avgtotal_last7)
+
+combined_oxford <- read_csv("data/combined_oxford-jan2022.csv")
+
+test <- left_join(combined_oxford, cases, by = "date") %>%
+  filter(date > "2020-06-01") %>% 
+  filter(date < "2021-12-05") %>%
+  rename(c("stingency" = "rating.x", "containment" = "rating.y")) %>%
+  pivot_longer(cols = c(stingency, containment), names_to = "index", values_to = "rating") %>%
+  mutate(group = as.factor(case_when(
+    date > "2020-06-02" & date < "2020-06-13" ~ 1,
+    date > "2020-10-27" & date < "2020-11-11" ~ 2,
+    date > "2021-01-26" & date < "2021-02-08" ~ 3,
+    date > "2021-03-10" & date < "2021-03-24" ~ 4,
+    date > "2021-05-30" & date < "2021-06-15" ~ 5,
+    date > "2021-09-09" & date < "2021-09-21" ~ 6,
+    date > "2021-11-15" & date < "2021-12-03" ~ 7))) %>%
+  filter(index == "stingency") # I decided to keep only 1 index due to great overlap
+
+test2<- test %>%
+  filter(!is.na(group))
+
+###
+coeff <- 130
+
+context_fig <- ggplot(test, aes(x=date)) +
+  geom_line(aes(y = avgtotal_last7/coeff), color = "dark blue", size = 1) +
+  geom_line(aes(y = rating), color = "dark red",size = 1) +
+  scale_y_continuous(name = "Oxford stringency index",
+                     sec.axis = sec_axis(~.*coeff, name="7-day avg. COVID-19 cases"))+
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "1 month") +
+  geom_ribbon(data = test2, aes(x = date, group = group, ymax = 80, ymin = 0), fill = "dark gray", alpha = 0.5) +
+  labs(x = "Time", color = "Oxford Index") +
+  geom_text(data=test[10, ], aes(y = rating), label = "Round 2", y = 82, size = 3) +
+  geom_text(data=test[155, ], aes(y = rating), label = "Round 3", y = 82, size = 3) +
+  geom_text(data=test[245, ], aes(y = rating), label = "Round 4 ", y = 82, size = 3) +
+  geom_text(data=test[290, ], aes(y = rating), label = " Round 5", y = 82, size = 3) +
+  geom_text(data=test[370, ], aes(y = rating), label = "Round 6", y = 82, size = 3) +
+  geom_text(data=test[475, ], aes(y = rating), label = "Round 7", y = 82, size = 3) +
+  geom_text(data=test[540, ], aes(y = rating), label = "Round 8", y = 82, size = 3)
+
+save(context_fig, file = "context_fig.RData")
+```
+
+```{r data, echo=FALSE, message=FALSE, warning=FALSE}
+# Read in the clean csv file
+leger <- read_csv("data/cmaj_analyses_jan2022.csv")
+
+```
+
+## Figure captions
+
+### Figure 1: Canadian context for the present study
+
+Figure 1 shows the epidemiological and health policy context in Canada between June 2020 and December 2021. The lower line (blue) depicts the 7-day average number of COVID-19 cases in Canada. Data on the number of cases was obtained from the Government of Canada’s Public Health Infobase (https://health-infobase.canada.ca/covid-19/epidemiological-summary-covid-19-cases.html, accessed on Dec. 17, 2021).  The shaded bands demonstrate the dates between the data in this study was collected. We start at survey round 2 because round 1 did not include data on measures of distress. The upper (red) line represents the Stringency index from the Oxford COVID-19 Government Response Tracker (OxCGRT). The OxCGRT collects daily public data on governmental responses to the pandemic, and the stringency index represents the overall strictness of policies and measures, (higher strictness denoting heavier limits on human behaviors and interactions). The scale ranges from 0 (no restriction) to 100 (complete lockdown).
+
+### Figure 2: COVID-19 related psychological distress across the pandemic timeline in Canada
+
+Figure 2 shows proportion of respondents who endorsed that the pandemic impacted their levels of anxiety, depression and loneliness, respectively, “to a great extent” for each survey round. Different colors correspond to different groups. Asterisks represent significance between the two groups at each survey wave as assessed by chi square comparisons. * = p < 0.05, ** = p < 0.01, *** = p < 0.001. See supplementary Table S3 for more details.
+
+\newpage
+
+```{r fig1, echo=FALSE, fig.width=7.5, fig.height=4}
+coeff <- 130
+load("context_fig.RData")
+context_fig
+```
+
+\newpage
+
+```{r fig2, echo=FALSE, fig.width=8, fig.height=9}
+#  This figure shows over time proportions for dichotomous outcome
+
+label <- c("0" = "No chronic health condition", "1" = "Chronic health")
+label_wave <- c("2" = "Round 2",
+                "3" = "Round 3",
+                "4" = "Round 4",
+                "5" = "Round 5",
+                "6" = "Round 6",
+                "7" = "Round 7",
+                "8" = "Round 8")
+
+fig2_a<- leger %>%
+  dplyr::select(wave, chronic_dummy, impacvd_sq001) %>%
+  group_by(wave, chronic_dummy, impacvd_sq001) %>%
+  drop_na() %>%
+  count() %>%
+  ungroup(impacvd_sq001) %>%
+  mutate(sum = sum(n),
+         prop = n/sum*100) %>%
+  filter(impacvd_sq001 == 3) %>%
+  ggplot(aes(x = impacvd_sq001, y = prop)) +
+  geom_col(aes(fill = factor(chronic_dummy)),
+               position = 'dodge') +
+  facet_grid(~ wave,
+             labeller = labeller(wave = label_wave)) +
+  ylim(0, 45) +
+  theme_bw() +
+  scale_fill_viridis_d(begin = 0.3, end = 0.8,
+                       breaks = c(0, 1),
+                     labels = c("No", "Yes")) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  labs(title = "COVID-19 anxiety", x = " ", y = "Prooportion (%)", fill = "Chronic condition")
+ 
+
+fig2_b<-leger %>%
+  dplyr::select(wave, chronic_dummy, impacvd_sq002) %>%
+  group_by(wave, chronic_dummy, impacvd_sq002) %>%
+  drop_na() %>%
+  count() %>%
+  ungroup(impacvd_sq002) %>%
+  mutate(sum = sum(n),
+         prop = n/sum*100) %>%
+  filter(impacvd_sq002 == 3) %>%
+  ggplot(aes(x = impacvd_sq002, y = prop)) +
+  geom_col(aes(fill = factor(chronic_dummy)),
+               position = 'dodge') +
+  facet_grid(~ wave,
+             labeller = labeller(wave = label_wave)) +
+  ylim(0, 45) +
+  theme_bw() +
+  scale_fill_viridis_d(begin = 0.3, end = 0.8,
+                       breaks = c(0, 1),
+                     labels = c("No", "Yes")) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  labs(title = "COVID-19 depression", x = " ", y = "Prooportion (%)", fill = "Chronic condition")
+ 
+
+fig2_c<-leger %>%
+  dplyr::select(wave, chronic_dummy, impacvd_sq003) %>%
+  group_by(wave, chronic_dummy, impacvd_sq003) %>%
+  drop_na() %>%
+  count() %>%
+  ungroup(impacvd_sq003) %>%
+  mutate(sum = sum(n),
+         prop = n/sum*100) %>%
+  filter(impacvd_sq003 == 3) %>%
+  ggplot(aes(x = impacvd_sq003, y = prop)) +
+  geom_col(aes(fill = factor(chronic_dummy)),
+               position = 'dodge') +
+  facet_grid(~ wave,
+             labeller = labeller(wave = label_wave)) +
+  ylim(0, 45) +
+  theme_bw() +
+  scale_fill_viridis_d(begin = 0.3, end = 0.8,
+                       breaks = c(0, 1),
+                     labels = c("No", "Yes")) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  labs(title = "COVID-19 loneliness", x = " ", y = "Prooportion (%)", fill = "Chronic condition")
+ 
+
+(fig2_a/fig2_b/fig2_c) + plot_annotation(tag_levels = "A") +
+  plot_layout(guides = 'collect')
+```
