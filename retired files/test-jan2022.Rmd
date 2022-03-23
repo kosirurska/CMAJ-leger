@@ -1,0 +1,383 @@
+---
+title: "Pre-analysis: Psychological functioning across the pandemic: A comparison of Canadian young adults with and without chronic illness"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load the libraries
+library(tidyverse)
+library(readr)
+library(here)
+library(psych)
+library(english)
+library(stringr)
+library(tableone)
+library(kableExtra)
+library(scales)
+library(ggridges)
+library(plotly)
+library(patchwork)
+library(haven)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(table1)
+library(rstatix)
+library(car)
+library(multcomp)
+#library(compute.se)
+library(effects)
+library(pastecs)
+#library(WRS)
+```
+
+```{r data, echo=FALSE, message=FALSE, warning=FALSE}
+# Read in the clean csv file
+leger <- read_csv("data/cmaj_analyses_jan2022.csv")
+
+# subset for chronic people only
+leger_chronic <- leger %>%
+  filter(chronic_dummy == 1)
+
+# Data for the plot
+marginal_means <- read_csv("data/marginal_means.csv")
+
+marginal_means_2 <- read_csv("data/marginal_means2.csv")
+
+covid_cases <- read_csv("data/covid19-download.csv")
+
+# set seed for all analyses and wrangling
+set.seed(1)
+```
+
+#### Aims:
+
+This document contains some of the exploratory code that led to the final analyses. The exact steps are outlined in the "project log".
+
+The present study is part of a larger International COVID‐19 Awareness and Responses Evaluation (iCARE) study, which is a global multi‐phase research survey conducted through the Montreal Behavioural Medicine Centre. Find more about the study and materials at [www.iCAREstudy.com](www.iCAREstudy.com). 
+
+### COVID-19 related psychological distress over time
+
+```{r echo=FALSE, warning=FALSE, fig.width= 12, fig.height=6}
+leger %>%
+  dplyr::select(chronic_dummy, wave, distress_sum, sex) %>%
+  filter(sex %in% c("Female", "Male")) %>%
+  mutate(chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("No", "Yes")),
+         wave = as.factor(wave)) %>%
+  ggplot(aes(x = wave)) +
+  geom_boxplot(aes(y = distress_sum, fill=chronic_dummy)) +
+  #facet_wrap(~chronic_dummy) +
+  labs(title = " ", x = "Survey round", y = "Level of psychological distress", fill = "Chronic condition") +
+  #facet_grid(~sex) +
+  ylim(0, 13) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
+                     labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
+                                "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
+
+
+GeomSplitViolin <- ggproto("GeomSplitViolin", GeomViolin, 
+                           draw_group = function(self, data, ..., draw_quantiles = NULL) {
+  data <- transform(data, xminv = x - violinwidth * (x - xmin), xmaxv = x + violinwidth * (xmax - x))
+  grp <- data[1, "group"]
+  newdata <- plyr::arrange(transform(data, x = if (grp %% 2 == 1) xminv else xmaxv), if (grp %% 2 == 1) y else -y)
+  newdata <- rbind(newdata[1, ], newdata, newdata[nrow(newdata), ], newdata[1, ])
+  newdata[c(1, nrow(newdata) - 1, nrow(newdata)), "x"] <- round(newdata[1, "x"])
+
+  if (length(draw_quantiles) > 0 & !scales::zero_range(range(data$y))) {
+    stopifnot(all(draw_quantiles >= 0), all(draw_quantiles <=
+      1))
+    quantiles <- ggplot2:::create_quantile_segment_frame(data, draw_quantiles)
+    aesthetics <- data[rep(1, nrow(quantiles)), setdiff(names(data), c("x", "y")), drop = FALSE]
+    aesthetics$alpha <- rep(1, nrow(quantiles))
+    both <- cbind(quantiles, aesthetics)
+    quantile_grob <- GeomPath$draw_panel(both, ...)
+    ggplot2:::ggname("geom_split_violin", grid::grobTree(GeomPolygon$draw_panel(newdata, ...), quantile_grob))
+  }
+  else {
+    ggplot2:::ggname("geom_split_violin", GeomPolygon$draw_panel(newdata, ...))
+  }
+})
+
+geom_split_violin <- function(mapping = NULL, data = NULL, stat = "ydensity", position = "identity", ..., 
+                              draw_quantiles = NULL, trim = TRUE, scale = "area", na.rm = FALSE, 
+                              show.legend = NA, inherit.aes = TRUE) {
+  layer(data = data, mapping = mapping, stat = stat, geom = GeomSplitViolin, 
+        position = position, show.legend = show.legend, inherit.aes = inherit.aes, 
+        params = list(trim = trim, scale = scale, draw_quantiles = draw_quantiles, na.rm = na.rm, ...))
+}
+
+set.seed(20160229)
+
+leger %>%
+  dplyr::select(chronic_dummy, wave, distress_sum, sex) %>%
+  filter(sex %in% c("Female", "Male")) %>%
+  mutate(m = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("No", "Yes")),
+         x = as.factor(wave),
+         y = distress_sum) %>%
+  ggplot(aes(x, y, fill = m)) +
+  geom_split_violin() +
+  labs(title = "Split violin (density) plot", x = "Survey round", y = "Level of psychological distress", fill = "Chronic condition") +
+  #facet_grid(~sex) +
+  ylim(0, 12) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
+                     labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
+                                "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
+
+###
+leger %>%
+  dplyr::select(chronic_dummy, wave, distress_sum, sex) %>%
+  filter(sex %in% c("Female", "Male")) %>%
+  mutate(z = -log(distress_sum+1)) %>%
+  mutate(chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("No", "Yes")),
+         wave = as.factor(wave)) %>%
+  ggplot(aes(x = z)) +
+  geom_histogram(aes(fill = z), bins = 10) +
+  facet_grid(wave~chronic_dummy)
+
+  geom_boxplot(aes(y = distress_sum, fill=chronic_dummy)) +
+  #facet_wrap(~chronic_dummy) +
+  labs(title = " ", x = "Survey round", y = "Level of psychological distress", fill = "Chronic condition") +
+  #facet_grid(~sex) +
+  ylim(0, 13) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_x_discrete(breaks = c(2, 3, 4, 5, 6, 7),
+                     labels = c("Mid June \n2020 \n(2)", "Early Nov. \n2020 \n(3)", "Late Jan. \n2021 \n(4)",
+                                "Late March \n2021 \n(5)", "Early June \n2021 \n(6)", "Mid Sept. \n2021 \n(7)"))
+
+
+#test <- 
+leger %>%
+  #dplyr::select(distress_sum)
+  #mutate(z = scale(distress_sum)) %>%
+  dplyr::select(distress_sum, chronic_dummy, wave) %>%
+  group_by(wave, chronic_dummy) %>%
+  shapiro_test(chronic_dummy)
+```
+
+### Density plots between the health status groups and age bracket
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, fig.width= 12, fig.height=6}
+leger %>%
+  mutate(age_grp = factor(case_when(age_yrs <26 ~ "Under 25 years",
+                                    age_yrs >25 ~ "26-39 years"),
+                          levels = c("Under 25 years", "26-39 years"),
+                          ordered = TRUE),
+         chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("Healthy", "Chronic health"))) %>%
+ggplot(aes(distress_sum, fill=chronic_dummy)) +
+  geom_density(alpha=.3) +
+  scale_fill_viridis_d(option = "D") +
+  theme_bw(base_size = 15) +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        strip.text = element_text(face = 'bold')) +
+  labs(x = "Distress", y = "Density", fill = " ") +
+  facet_grid(~age_grp)
+
+
+leger %>%
+  mutate(age_grp = factor(case_when(age_yrs <26 ~ "Under 25 years",
+                                    age_yrs >25 ~ "26-39 years"),
+                          levels = c("Under 25 years", "26-39 years"),
+                          ordered = TRUE),
+         chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("Healthy", "Chronic health"))) %>%
+  filter(sex %in% c("Female", "Male")) %>%
+  group_by(age_grp, chronic_dummy) %>%
+  count() %>%
+  drop_na() %>%
+  group_by(age_grp) %>%
+  mutate(sum_grp = sum(n),
+         prop = round((n/sum_grp*100),2)) %>%
+  dplyr::select(-sum_grp) %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+```
+
+### FEMALE v MALE v CHRONIC v HEALTHY
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+test1 <- leger %>%
+  dplyr::select(age_yrs, sex, chronic_dummy, distress_sum, wave) %>%
+  filter(sex %in% c("Female", "Male")) %>%
+  mutate(age_grp = factor(case_when(age_yrs <26 ~ "Under 25 years",
+                                    age_yrs >25 ~ "26-39 years"),
+                          levels = c("Under 25 years", "26-39 years"),
+                          ordered = TRUE),
+         chronic_dummy = factor(chronic_dummy,
+                                levels = c(0:1),
+                                labels = c("Healthy", "Chronic health")),
+         wave = factor(wave,ordered = TRUE))
+
+test1 %>%
+  group_by(age_grp, chronic_dummy, sex) %>%
+  summarise(means = mean(distress_sum, na.rm = TRUE)) %>%
+  ggplot(aes(x = age_grp, y = means, color = chronic_dummy, group = chronic_dummy)) +
+  geom_point(size = 4) +
+  geom_line() +
+  facet_wrap(~sex) +
+  theme_bw(base_size = 15) +
+  theme(strip.text = element_text(face = 'bold')) +
+  labs(x = "Age group", y = "Distress level", fill = " ") +
+  ylim(0, 12)
+```
+
+<!-- ### Associations between psych distress and socio-demographic factors -->
+
+<!-- #### Logistic regression output -->
+
+<!-- *NOTE* - Education is treated as continuous variable with the following levels: "never been" ~ 0, "primary" ~ 1,"secondary" ~ 2, "college" ~ 3, "graduate" ~ 4. -->
+
+<!-- Province is broken down into 3 geographical regions:  -->
+
+<!-- * *East* = "New Brunswick", "Nova Scotia", "Prince Edward Island", "Newfoundland" -->
+<!-- * *Central* = "Ontario", "Quebec" -->
+<!-- * *West* = "British Columbia", "Alberta", "Saskatchewan", "Manitoba" -->
+
+<!-- Distress rev = compound score of COVID-19 related feelings of anxiety, depression, and loneliness. Scale rangess from 4 - 16, with higher scores indicating higher levels of pandemic-related distress. -->
+
+<!-- *** -->
+
+<!-- ## CHRONIC GROUP -->
+
+```{r echo=FALSE, warning=FALSE}
+# set.seed(1)
+# 
+# leger_chronic_m1 <- leger_chronic %>%
+#   select(vaccine_dummy, age_yrs, sex, hoinc, edu, province, wave, any_m_health, chronic_multi, distress, concern_sq002) %>%
+#   filter(sex %in% c("Male", "Female")) %>%
+#   mutate(education = as.numeric(case_when(edu == "Never been" ~ 0, 
+#                                           edu == "Primary" ~ 1,
+#                                           edu == "Secondary" ~ 2,
+#                                           edu == "College" ~ 3,
+#                                           edu == "Graduate" ~ 4)))
+# 
+# m1_chronic <- glm(distress ~ age_yrs + sex + province + education + hoinc + any_m_health + chronic_multi + wave + concern_sq002,
+#                   data = leger_chronic_m1)
+# 
+# tab_model(m1_chronic)
+
+```
+
+<!-- ## HEALTHY GROUP -->
+```{r echo=FALSE, warning=FALSE}
+# set.seed(1)
+# 
+# leger_healthy_m1 <- leger %>%
+#   filter(chronic_dummy == 0) %>%
+#   select(vaccine_dummy, age_yrs, sex, hoinc, edu, province, wave, any_m_health, chronic_multi, distress, concern_sq002) %>%
+#   filter(sex %in% c("Male", "Female")) %>%
+#   mutate(education = as.numeric(case_when(edu == "Never been" ~ 0, 
+#                                           edu == "Primary" ~ 1,
+#                                           edu == "Secondary" ~ 2,
+#                                           edu == "College" ~ 3,
+#                                           edu == "Graduate" ~ 4)))
+# 
+# m1_healthy <- glm(distress ~ age_yrs + sex + province + education + hoinc + any_m_health + wave + concern_sq002,
+#                   data = leger_healthy_m1)
+# 
+# tab_model(m1_healthy)
+```
+
+
+### Plotting Covid cases in Canada 
+
+The first figure was created in hopes to reproduce a figure that someone else in the team has previously come up with - it uses cases summed up by month.
+
+The original figure can be viewed [here](https://www.medrxiv.org/content/medrxiv/early/2021/11/11/2021.11.10.21266174.full.pdf), at the end of the pdf.
+
+```{r echo = FALSE, warning = FALSE, message = FALSE}
+covid_cases_test <- read_csv("data/covid19-download.csv") %>%
+  dplyr::select(date, prname, numtoday) %>%
+  mutate(month = case_when(date >= "2020-01-01" & date < "2020-02-01" ~ 202001,
+                           date >= "2020-02-01" & date < "2020-03-01" ~ 202002,
+                           date >= "2020-03-01" & date < "2020-04-01" ~ 202003,
+                           date >= "2020-04-01" & date < "2020-05-01" ~ 202004,
+                           date >= "2020-05-01" & date < "2020-06-01" ~ 202005,
+                           date >= "2020-06-01" & date < "2020-07-01" ~ 202006,
+                           date >= "2020-07-01" & date < "2020-08-01" ~ 202007,
+                           date >= "2020-08-01" & date < "2020-09-01" ~ 202008,
+                           date >= "2020-09-01" & date < "2020-10-01" ~ 202009,
+                           date >= "2020-10-01" & date < "2020-11-01" ~ 202010,
+                           date >= "2020-11-01" & date < "2020-12-01" ~ 202011,
+                           date >= "2020-12-01" & date < "2021-01-01" ~ 202012,
+                           date >= "2021-01-01" & date < "2021-02-01" ~ 202101,
+                           date >= "2021-02-01" & date < "2021-03-01" ~ 202102,
+                           date >= "2021-03-01" & date < "2021-04-01" ~ 202103,
+                           date >= "2021-04-01" & date < "2021-05-01" ~ 202104,
+                           date >= "2021-05-01" & date < "2021-06-01" ~ 202105,
+                           date >= "2021-06-01" & date < "2021-07-01" ~ 202106,
+                           date >= "2021-07-01" & date < "2021-08-01" ~ 202107,
+                           date >= "2021-08-01" & date < "2021-09-01" ~ 202108,
+                           date >= "2021-09-01" & date < "2021-10-01" ~ 202109)) %>%
+  dplyr::select(-date)
+
+# covid_cases_test %>%
+#   filter(prname == "Canada") %>%
+#   filter(month == 202105) %>%
+#   mutate(sum = sum(numtoday))
+
+month <- c("jan 2020", "feb 2020", "mar 2020", "apr 2020", "may 2020", "jun 2020",
+           "jul 2020", "aug 2020", "sep 2020", "oct 2020", "nov 2020", "dec 2020",
+           "jan 2021", "")
+value <- c(4, 11, 8533, 44688, 37711, 13257, 
+           12108, 12636, 29810, 76686, 142695, 203288,
+           198426, 87841, 114416, 237308, 162155)
+month_num <- c(1:17)
+
+df<-data.frame(month_num, value)
+
+# wave 2 = june 3 - 12
+# wave 3 = 2020-10-28 = 
+# wave 4 = 2021-01-27 - 2021-02-07
+# wave 5 = 2021-03-11 - 2021-03-23
+# wave 6 = 2021-05-31 - 2021-06-14
+# wave 7 = 2021-09-10 - 2021-09-20
+
+df %>%
+  ggplot(aes(x = month_num, y = value)) +
+  geom_line() +
+  geom_vline(aes(xintercept = 12), alpha = 0.2) +
+  geom_vline(aes(xintercept = 13), alpha = 0.2) +
+  geom_vline(aes(xintercept = 11), alpha = 0.2) +
+  geom_vline(aes(xintercept = 14), alpha = 0.2) +
+  geom_vline(aes(xintercept = 10), alpha = 0.2) +
+  geom_vline(aes(xintercept = 9), alpha = 0.2) +
+  theme_blank()
+
+
+covid_cases %>%
+  filter(date > "2020-06-01") %>% 
+  filter(date < "2021-09-30") %>%
+  filter(prname == "Canada") %>%
+  mutate(group = as.factor(case_when(date > "2020-06-02" & date < "2020-06-13" ~ 1,
+                           date > "2020-10-27" & date < "2020-11-11" ~ 2,
+                           date > "2021-01-26" & date < "2021-02-08" ~ 3,
+                           date > "2021-03-10" & date < "2021-03-24" ~ 4,
+                           date > "2021-05-30" & date < "2021-06-15" ~ 5,
+                           date > "2021-09-09" & date < "2021-09-21" ~ 6))) %>%
+  ggplot(aes(x = date, y = avgtotal_last7)) +
+  geom_line(color = "light blue") +
+  geom_ribbon(aes(x = date, group = group, ymax = avgtotal_last7, ymin = 0), fill = "light blue", alpha = 0.3) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "1 month") +
+  labs(x = "Time", y = "Number of daily COVID-19 cases")
+
+
+```
