@@ -35,30 +35,10 @@ library(tidymodels)
 # Read in the clean csv file
 leger <- read_csv("data/cmaj_analyses_jan2022.csv")
 
-leger_jamovi <- leger %>%
-  #filter(chronic_dummy == 1) %>%
-  dplyr::select(age_yrs, sex, edu, hoinc, chronic_descriptive, chronic_dummy, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003, wave)
-
-write_csv(leger_jamovi, "~/Desktop/leger_anal.csv")
-
-
-leger_chronic2 <- leger %>%
-  filter(chronic_dummy == 1) %>%
-  dplyr::select(age_yrs, sex, edu, hoinc, chronic_descriptive, chronic_dummy, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003, wave)
-
-write_csv(leger_chronic2, "~/Desktop/chronic_anal.csv")
-
-leger_healthy2 <- leger %>%
-  filter(chronic_dummy == 0) %>%
-  dplyr::select(age_yrs, sex, edu, hoinc, chronic_descriptive, chronic_dummy, chronic_multi, any_m_health, impacvd_sq001, impacvd_sq002, impacvd_sq003, wave)
-
-write_csv(leger_healthy2, "~/Desktop/healthy_anal.csv")
-
 
 # set seed for all analyses and wrangling
 set.seed(1)
 
-# context_fig
 ```
 
 ## RESULTS
@@ -496,7 +476,11 @@ cramerV(w3$impacvd_sq001, w3$chronic_dummy, bias.correct = TRUE)
 #  0.09307 
  
 chisq_test(w3, impacvd_sq002 ~ chronic_dummy) #NS
+cramerV(w3$impacvd_sq002, w3$chronic_dummy, bias.correct = TRUE)
+
 chisq_test(w3, impacvd_sq003 ~ chronic_dummy) #NS
+cramerV(w3$impacvd_sq003, w3$chronic_dummy, bias.correct = TRUE)
+
 
 nrow(w3)
 ```
@@ -540,6 +524,8 @@ cramerV(w5$impacvd_sq001, w5$chronic_dummy, bias.correct = TRUE)
 #    0.075 
 
 chisq_test(w5, impacvd_sq002 ~ chronic_dummy) #NS
+cramerV(w5$impacvd_sq002, w5$chronic_dummy, bias.correct = TRUE)
+
 
 chisq_test(w5, impacvd_sq003 ~ chronic_dummy) #Sig
 cramerV(w5$impacvd_sq003, w5$chronic_dummy, bias.correct = TRUE)

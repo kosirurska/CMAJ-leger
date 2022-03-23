@@ -221,3 +221,5 @@ fig2_c<-leger %>%
 (fig2_a/fig2_b/fig2_c) + plot_annotation(tag_levels = "A") +
   plot_layout(guides = 'collect')
 ```
+
+**NB** The published figures have significance marked with *. These were added manually afterwards.
