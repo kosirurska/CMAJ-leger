@@ -1,5 +1,5 @@
 ---
-title: "CPA 2022 abstract"
+title: "IBTN 2022 abstract"
 output: html_document
 ---
 
@@ -29,7 +29,7 @@ library(sjstats)
 
 ```{r data, echo=FALSE, message=FALSE, warning=FALSE}
 # Read in the clean csv file
-cpa_data <- read_csv("~/Documents/R Codes/CMAJ-leger/CPA_2022/cpa_analyses.csv")
+cpa_data <- read_csv("~/Documents/R Codes/CMAJ-leger/CPA_2022/cpa_analyses_april22.csv")
 
 ```
 ## Weighted descriptive info
